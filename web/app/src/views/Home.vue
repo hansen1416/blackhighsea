@@ -1,22 +1,30 @@
 <template>
-  <div class="home">
-    <ChartLine
-      :stock-code="stockCode"
-    />
+  <div>
+    <ul>
+      <li
+        v-for="code in allStocks"
+        :key="code"
+      >
+        <router-link
+          :to="{name: 'pred_hl', params: {stock_code: code}}"
+        >
+          <span>{{code}}</span>
+        </router-link>
+      </li>
+    </ul>
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import ChartLine from '@/components/ChartLine.vue'; // @ is an alias to /src
 
 export default defineComponent({
   components: {
-    ChartLine
+
   },
   computed: {
-    stockCode(): string {
-      return '600104';
+    allStocks(): string[] {
+      return ['600104', '600198'];
     }
   },
   // created() {

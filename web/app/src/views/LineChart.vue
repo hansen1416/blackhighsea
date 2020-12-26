@@ -23,7 +23,7 @@ interface Data{
 
 export default defineComponent({
   props: {
-    stockCode: String,
+    
   },
   data() {
     return {
@@ -33,6 +33,9 @@ export default defineComponent({
   computed: {
     ctx(): CanvasRenderingContext2D {
       return (this.$refs.chart as HTMLCanvasElement).getContext('2d') as CanvasRenderingContext2D;
+    },
+    stockCode(): string {
+      return this.$route.params.stock_code as string;
     },
   },
   methods: {
@@ -122,9 +125,8 @@ export default defineComponent({
         const data: Data = response.data;
         
         // pop empty data
-        data.date.push('')
-        data.date.push('')
-        data.date.push('')
+        data.date.push('', '')
+        
         data.real_high.pop()
         data.real_low.pop()
 
