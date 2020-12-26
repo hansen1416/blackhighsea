@@ -1,0 +1,26 @@
+version: "3.8"
+services:
+
+  web:
+    networks:
+      - bhs
+    image: hansen1416/bhs-vue
+    ports:
+      - 4600:8080
+    volumes:
+      - ${FRONTEND_SOURCE}:/app
+    working_dir: /app
+    command: ["npm", "run", "serve"]
+
+  py-api:
+    networks:
+      - bhs
+    image: hansen1416/bhs-py-api
+    ports:
+      - 4601:80
+    volumes:
+      - ${PY_API_SOURCE}:/app
+
+networks:
+  bhs:
+    driver: bridge
