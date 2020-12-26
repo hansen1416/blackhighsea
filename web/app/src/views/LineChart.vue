@@ -17,8 +17,8 @@ interface Data{
   real_low: number[];
   pred_high: number[];
   pred_low: number[];
-  predicted_high: number[];
-  predicted_low: number[];
+  next_high: number[];
+  next_low: number[];
 }
 
 export default defineComponent({
@@ -71,14 +71,14 @@ export default defineComponent({
                     pointRadius: 0,
                   },
                   {
-                    data: data.predicted_high,
+                    data: data.next_high,
                     borderColor: "rgb(233, 60, 88)",
                     fill: false,
                     pointRadius: 5,
                     pointBackgroundColor: "rgb(233, 60, 88)",
                   },
                   {
-                    data: data.predicted_low,
+                    data: data.next_low,
                     borderColor: "rgb(46, 149, 98)",
                     fill: false,
                     pointRadius: 5,
@@ -142,13 +142,12 @@ export default defineComponent({
 
         data.real_high = data.real_high.map(x => x)
 
-        // predicted prices
-        data.predicted_high = new Array(limit)
-        data.predicted_high.push(data.pred_high[limit])
-        data.predicted_low = new Array(limit)
-        data.predicted_low.push(data.pred_low[limit])
-
-        // console.log(data.predicted_high, data.pred_high[limit]);
+        // predicted prices, 
+        // becasue predicted result has one more day, so limit will not out of range
+        data.next_high = new Array(limit)
+        data.next_high.push(data.pred_high[limit])
+        data.next_low = new Array(limit)
+        data.next_low.push(data.pred_low[limit])
 
         const high = Math.max(...[...data.real_high, ...data.pred_high])
         const low = Math.min(...[...data.real_low, ...data.pred_low])
