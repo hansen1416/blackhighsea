@@ -13,12 +13,9 @@ import Chart from 'chart.js'
 
 interface Data{
   date: string[];
-  real_high: number[];
-  real_low: number[];
-  pred_high: number[];
-  pred_low: number[];
-  next_high: number[];
-  next_low: number[];
+  real_close: number[];
+  pred_close: number[];
+  next_close: number[];
 }
 
 export default defineComponent({
@@ -47,42 +44,23 @@ export default defineComponent({
                   labels: data.date,
                   datasets: [
                   {
-                    data: data.real_high,
+                    data: data.real_close,
                     borderColor: "rgb(233, 60, 88)",
                     fill: false,
                     pointRadius: 0,
                   }, 
-                  { 
-                    data: data.real_low,
-                    borderColor: "rgb(46, 149, 98)",
-                    fill: false,
-                    pointRadius: 0,
-                  },
                   {
-                    data: data.pred_high,
+                    data: data.pred_close,
                     borderColor: "rgba(233, 60, 88, .6)",
                     fill: false,
                     pointRadius: 0,
                   }, 
-                  { 
-                    data: data.pred_low,
-                    borderColor: "rgba(46, 149, 98, .6)",
-                    fill: false,
-                    pointRadius: 0,
-                  },
                   {
-                    data: data.next_high,
+                    data: data.next_close,
                     borderColor: "rgb(233, 60, 88)",
                     fill: false,
                     pointRadius: 5,
                     pointBackgroundColor: "rgb(233, 60, 88)",
-                  },
-                  {
-                    data: data.next_low,
-                    borderColor: "rgb(46, 149, 98)",
-                    fill: false,
-                    pointRadius: 5,
-                    pointBackgroundColor: "rgb(46, 149, 98)",
                   },
                   ]
               },
@@ -127,30 +105,23 @@ export default defineComponent({
         // pop empty data
         data.date.push('', '')
         
-        data.real_high.pop()
-        data.real_low.pop()
+        data.real_close.pop()
 
-        const data_len = data.real_low.length;
+        const data_len = data.real_close.length;
 
         const limit = 50;
 
         data.date = data.date.slice(data_len - limit);
-        data.real_high = data.real_high.slice(data_len - limit);
-        data.real_low = data.real_low.slice(data_len - limit);
-        data.pred_high = data.pred_high.slice(data_len - limit);
-        data.pred_low = data.pred_low.slice(data_len - limit);
-
-        data.real_high = data.real_high.map(x => x)
+        data.real_close = data.real_close.slice(data_len - limit);
+        data.pred_close = data.pred_close.slice(data_len - limit);
 
         // predicted prices, 
         // becasue predicted result has one more day, so limit will not out of range
-        data.next_high = new Array(limit)
-        data.next_high.push(data.pred_high[limit])
-        data.next_low = new Array(limit)
-        data.next_low.push(data.pred_low[limit])
+        data.next_close = new Array(limit)
+        data.next_close.push(data.pred_close[limit])
 
-        const high = Math.max(...[...data.real_high, ...data.pred_high])
-        const low = Math.min(...[...data.real_low, ...data.pred_low])
+        const high = Math.max(...[...data.real_close, ...data.pred_close])
+        const low = Math.min(...[...data.real_close, ...data.pred_close])
 
         this.drawChart(data, 
         Math.ceil(high + (high - low)/5), 

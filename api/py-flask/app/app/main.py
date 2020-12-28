@@ -15,26 +15,20 @@ DATA_DIR = '/app/data/'
 def prediction(stock_code):
 
     dates = []
-    real_high = []
-    real_low = []
-    pred_high = []
-    pred_low = []
+    real_close = []
+    pred_close = []
 
     with open(os.path.join(DATA_DIR, '{0}.csv'.format(stock_code)), newline='') as csvfile:
         reader = csv.DictReader(csvfile, delimiter=',')
         for row in reader:
             dates.append(row['date'])
-            real_high.append(row['real_high'])
-            real_low.append(row['real_low'])
-            pred_high.append("%.2f" % float(row['pred_high']))
-            pred_low.append("%.2f" % float(row['pred_low']))
+            real_close.append(row['real_close'])
+            pred_close.append("%.2f" % float(row['pred_close']))
 
     return {
         "date": dates,
-        "real_high": real_high,
-        "real_low": real_low,
-        "pred_high": pred_high,
-        "pred_low": pred_low,
+        "real_close": real_close,
+        "pred_close": pred_close,
     }
 
 if __name__ == "__main__":
