@@ -6,10 +6,22 @@ import sys
 from flask import Flask, request
 from flask_cors import CORS
 
+from stockname import StockNames
+
 app = Flask(__name__)
 CORS(app)
 
-DATA_DIR = '/app/data/'
+LSTM_RESULT_DIR = '/app/data/'
+
+@app.route("/stocklist")
+def stocklist():
+
+    lstm_results = [f.strip('.csv') for f in os.listdir(LSTM_RESULT_DIR) \
+        if os.path.isfile(os.path.join(LSTM_RESULT_DIR, f))]
+
+    stocks = {code: StockNames[code] for code in lstm_results if StockNames.get(code)}
+
+    return stocks
 
 @app.route("/prediction/<stock_code>")
 def prediction(stock_code):
@@ -18,7 +30,8 @@ def prediction(stock_code):
     real_close = []
     pred_close = []
 
-    with open(os.path.join(DATA_DIR, '{0}.csv'.format(stock_code)), newline='') as csvfile:
+    with open(os.path.join(LSTM_RESULT_DIR, \
+        '{0}.csv'.format(stock_code)), newline='') as csvfile:
         reader = csv.DictReader(csvfile, delimiter=',')
         for row in reader:
             dates.append(row['date'])

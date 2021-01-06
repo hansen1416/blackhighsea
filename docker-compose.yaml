@@ -21,6 +21,15 @@ services:
     volumes:
       - ${PY_API_SOURCE}:/app
 
+  py-selenium:
+    networks:
+      - bhs
+    image: hansen1416/bhs-py-selenium
+    ports:
+      - 4602:80
+    volumes:
+      - ${PY_SELENIUM_SOURCE}:/app
+
 networks:
   bhs:
     driver: bridge

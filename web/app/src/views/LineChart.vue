@@ -1,5 +1,12 @@
 <template>
   <section>
+    <div class='home'>
+      <router-link
+        :to="{name: 'home'}"
+      >
+        <span>home</span>
+      </router-link>
+    </div>
     <div class="box">
       <canvas ref="chart"></canvas>
     </div>
@@ -8,8 +15,8 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import axios, {AxiosResponse} from "axios"
-import Chart from 'chart.js'
+import axios, {AxiosResponse} from "axios";
+import Chart from 'chart.js';
 
 interface Data{
   date: string[];
@@ -34,6 +41,13 @@ export default defineComponent({
     stockCode(): string {
       return this.$route.params.stock_code as string;
     },
+    stockName(): string {
+      if (this.$store.state.stocknames && this.$store.state.stocknames[this.stockCode]) {
+        return this.$store.state.stocknames[this.stockCode];
+      } else {
+        return '';
+      }
+    }
   },
   methods: {
     drawChart(data: Data, y_max: number, y_min: number) {
@@ -67,7 +81,7 @@ export default defineComponent({
               options: {
                   title: {
                       display: true,
-                      text: '600104 Price prediction',
+                      text: `${this.stockCode} ${this.stockName} Price prediction`,
                   },
                   scales: {
                     yAxes: [{
@@ -147,6 +161,13 @@ export default defineComponent({
     align-items: center;
     width: 100vw;
     height: 100vh;
+
+    .home {
+      position: absolute;
+      top: 30px;
+      left: 50%;
+      margin: 0 0 0 -2em;
+    }
 
     .box {
       width: 1200px;
