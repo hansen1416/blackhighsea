@@ -5,9 +5,10 @@
 
 int main(int argc, const char *argv[])
 {
-    if (argc != 2)
+    if (argc != 3)
     {
-        std::cerr << "usage: example-app <path-to-exported-script-module>\n";
+        std::cerr << "usage: gan-model <path-to-exported-model> <path-to-image-tensor>"
+                  << std::endl;
         return -1;
     }
 
@@ -23,11 +24,26 @@ int main(int argc, const char *argv[])
         return -1;
     }
 
-    // Create a vector of inputs.
-    std::vector<torch::jit::IValue> inputs;
-    inputs.push_back(torch::ones({1, 3, 224, 224}));
+    try
+    {
+        torch::jit::script::Module image_list = torch::jit::load(argv[2]);
 
-    // Execute the model and turn its output into a tensor.
-    at::Tensor output = module.forward(inputs).toTensor();
-    std::cout << output.slice(/*dim=*/1, /*start=*/0, /*end=*/5) << '\n';
+        torch::Tensor a = image_list.attr("image_list").toTensor();
+
+        // Load values by name
+        std::cout << a << "\n";
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << e.what() << '\n';
+        return -1;
+    }
+
+    // // Create a vector of inputs.
+    // std::vector<torch::jit::IValue> inputs;
+    // inputs.push_back(torch::ones({1, 3, 224, 224}));
+
+    // // Execute the model and turn its output into a tensor.
+    // at::Tensor output = module.forward(inputs).toTensor();
+    // std::cout << output.slice(/*dim=*/1, /*start=*/0, /*end=*/5) << '\n';
 }
