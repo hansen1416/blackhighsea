@@ -1,4 +1,5 @@
 #include <torch/script.h> // One-stop header.
+#include <torch/torch.h>
 
 #include <iostream>
 #include <memory>
@@ -24,14 +25,15 @@ int main(int argc, const char *argv[])
         return -1;
     }
 
+    torch::Tensor image_tensor;
     try
     {
         torch::jit::script::Module image_list = torch::jit::load(argv[2]);
 
-        torch::Tensor a = image_list.attr("image_list").toTensor();
+        image_tensor = image_list.attr("image_list").toTensor();
 
         // Load values by name
-        std::cout << a << "\n";
+        // std::cout << image_tensor << "\n";
     }
     catch (const std::exception &e)
     {
@@ -39,11 +41,13 @@ int main(int argc, const char *argv[])
         return -1;
     }
 
-    // // Create a vector of inputs.
-    // std::vector<torch::jit::IValue> inputs;
-    // inputs.push_back(torch::ones({1, 3, 224, 224}));
+    // Create a vector of inputs.
+    std::vector<torch::jit::IValue> inputs;
+    inputs.push_back(image_tensor);
 
-    // // Execute the model and turn its output into a tensor.
-    // at::Tensor output = module.forward(inputs).toTensor();
+    // Execute the model and turn its output into a tensor.
+    at::Tensor output = module.forward(inputs).toTensor();
     // std::cout << output.slice(/*dim=*/1, /*start=*/0, /*end=*/5) << '\n';
+
+    torch::save(output, "oi.pt");
 }

@@ -16,6 +16,8 @@ services:
     networks:
       - bhs
     image: hansen1416/bhs-py-api
+    env:
+      - FLASK_ENV=development
     ports:
       - 4601:80
     volumes:
