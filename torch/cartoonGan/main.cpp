@@ -1,6 +1,7 @@
-#include <torch/script.h> // One-stop header.
-#include <torch/torch.h>
+// #include <torch/script.h> // One-stop header.
+// #include <torch/torch.h>
 
+// install opencv 4.5.1, https://github.com/opencv/opencv/archive/4.5.1.zip
 // opencv 头文件
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -18,7 +19,7 @@ cmake -S . -B build/
 
 or
 
-# ~/blackhighsea/torch/cartoonGan/
+# ~/blackhighsea/torch/cartoonGan/build
 cmake -S .. -B .
 
 #~/blackhighsea/torch/cartoonGan/build
