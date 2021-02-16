@@ -15,8 +15,26 @@
 int main(int argc, const char *argv[])
 {
     cv::Mat input_image;
+    cv::Mat read_image = cv::imread("/home/hlz/Pictures/1.png");
+    if (read_image.empty() || !read_image.data)
+        std::cout << "read image fail" << std::endl;
 
-    std::cout << "has open cv" << typeid(cv::Mat).name() << "\n";
+    cv::cvtColor(read_image, input_image, cv::COLOR_BGR2RGB);
+
+    // resize(256)
+    cv::Size scale(256, 256);
+    cv::resize(input_image, input_image, scale, 0, 0, cv::INTER_LINEAR);
+
+    // centerSizeCrop(224)
+    const int cropSize = 224;
+    const int offsetW = std::round((input_image.cols - cropSize) / 2.0);
+    const int offsetH = std::round((input_image.rows - cropSize) / 2.0);
+    const cv::Rect roi(offsetW, offsetH, cropSize, cropSize);
+    input_image = input_image(roi).clone();
+
+    
+    std::cout << input_image << "\n";
+
     
     // if (argc != 3)
     // {
