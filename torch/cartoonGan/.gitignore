@@ -1,3 +1,4 @@
 build/*
 model-trace
 *.pt
+output/*
