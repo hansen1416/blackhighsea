@@ -57,22 +57,6 @@ int main(int argc, const char *argv[])
         return -1;
     }
 
-    // torch::Tensor image_tensor;
-    // try
-    // {
-    //     torch::jit::script::Module image_list = torch::jit::load(argv[2]);
-
-    //     image_tensor = image_list.attr("image_list").toTensor();
-
-    //     // Load values by name
-    //     // std::cout << image_tensor << "\n";
-    // }
-    // catch (const std::exception &e)
-    // {
-    //     std::cerr << e.what() << '\n';
-    //     return -1;
-    // }
-
     // Create a vector of inputs.
     std::vector<torch::jit::IValue> inputs;
     inputs.push_back(tensor_image);
@@ -87,16 +71,10 @@ int main(int argc, const char *argv[])
     output[0][2] = output[0][2].mul_(0.225).add_(0.406+0.1);
 
     torch::Tensor temp_tensor = torch::rand({3, output.sizes()[2], output.sizes()[3]});
-
+    // swap channel, from RGB => BGR
     temp_tensor[0] = output[0][2];
     temp_tensor[1] = output[0][1];
     temp_tensor[2] = output[0][0];
-
-    // print tensor shape
-    // std::cout << tempTtemp_tensorensor.sizes() << "\n";
-
-    // std::cout << output[0][1][2][3] << output[0][1][3][3] << output[0][2][200][3] <<
-    //       output[0][2][20][630] << output[0][1][200][300] << "\n";
 
     cv::Mat output_mat = TensorToCVMat(temp_tensor);
 
@@ -119,47 +97,21 @@ cv::Mat TensorToCVMat(torch::Tensor tensor)
     // tensor.detach
     // Returns a new Tensor, detached from the current graph.
     // permute dimension, 3x700x700 => 700x700x3
-    tensor = tensor.squeeze(0).detach().permute({1, 2, 0});
+    tensor = tensor.detach().permute({1, 2, 0});
     // float to 255 range
     tensor = tensor.mul(255).clamp(0, 255).to(torch::kU8);
-    // GPU to CPU?, may be not needed
+    // GPU to CPU?, may not needed
     tensor = tensor.to(torch::kCPU);
     // shape of tensor
     int64_t height = tensor.size(0);
     int64_t width = tensor.size(1);
-    // 700 x 700
-    // std::cout << width << height << "\n";
-
-    // std::cout << tensor.sizes() << "\n";
-
-    // std::cout << tensor[0][0][0] << tensor[0][0][1] << tensor[0][0][2] << "\n";
 
     // Mat takes data form like {0,0,255,0,0,255,...} ({B,G,R,B,G,R,...})
     // so we must reshape tensor, otherwise we get a 3x3 grid
-    auto new_tensor = tensor.reshape({width * height * 3, 1});
-
-    // std::cout << new_tensor.sizes() << "\n";
-
-    // std::cout << new_tensor[0] << new_tensor[1] << new_tensor[2] << "\n";
-
-    cv::Mat imgbin(cv::Size(width, height), CV_8UC3, new_tensor.data_ptr());
+    tensor = tensor.reshape({width * height * 3});
+    // CV_8UC3 is an 8-bit unsigned integer matrix/image with 3 channels
+    cv::Mat imgbin(cv::Size(width, height), CV_8UC3, tensor.data_ptr());
 
     return imgbin;
-
-    // cv::Mat resultImg(height, width, CV_8UC3);
-    // //copy the data from out_tensor to resultImg
-    // std::memcpy((void *) resultImg.data, tensor.data_ptr(), sizeof(torch::kU8) * tensor.numel());
-
-    // return resultImg;
-
-    // tensor = tensor.to(torch::kU8).to(torch::kCPU);
-    // auto sizes = tensor.sizes();
-    // cv::Mat mat{cv::Size{static_cast<int>(sizes[1]) ,
-    //                     static_cast<int>(sizes[0]) },
-    //             CV_8UC(static_cast<int>(sizes[2])),
-    //             tensor.data_ptr()};
-
-    // //  cv::imwrite("/tmp/mat.png", mat);
-    // return mat;
 }
 
