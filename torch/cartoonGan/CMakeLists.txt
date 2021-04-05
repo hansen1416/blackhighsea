@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 
 project(cartoonGan)
 
-set(Torch_DIR /home/hlz/blackhighsea/torch/libtorch/share/cmake/Torch)
+set(Torch_DIR /opt/libtorch/share/cmake/Torch)
 
-set(OpenCV_DIR /home/hlz/blackhighsea/torch/opencv/lib/cmake/opencv4)
+set(OpenCV_DIR /opt/opencv/lib/cmake/opencv4)
 
 set(CMAKE_CXX_STANDARD 14)
 

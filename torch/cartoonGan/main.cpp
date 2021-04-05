@@ -12,21 +12,25 @@
 
 #include <typeinfo>
 
+// ./cartoonGan /home/hlz/blackhighsea/torch/cartoonGan/model-trace/gan-generator.pt \
+// /home/hlz/blackhighsea/torch/cartoonGan/input/p2.jpg \
+// /home/hlz/blackhighsea/torch/cartoonGan/output/o1.jpg
+
 cv::Mat TensorToCVMat(torch::Tensor tensor);
 
 int main(int argc, const char *argv[])
 {
-    // if (argc != 3)
-    // {
-    //     std::cerr << "usage: gan-model <path-to-exported-model> <path-to-image-tensor>"
-    //               << std::endl;
-    //     return -1;
-    // }
+    if (argc != 4)
+    {
+        std::cerr << "usage: gan-model <path-to-model> <input-image> <output-image>"
+                  << std::endl;
+        return -1;
+    }
 
     cv::Mat input_image;
-    cv::Mat read_image = cv::imread("/home/hlz/blackhighsea/torch/cartoonGan/input/p2.jpg");
+    cv::Mat read_image = cv::imread(argv[2]);
     if (read_image.empty() || !read_image.data)
-        std::cout << "read image fail" << std::endl;
+        std::cout << "read image fail" << argv[1] << std::endl;
 
     cv::cvtColor(read_image, input_image, cv::COLOR_BGR2RGB);
 
@@ -48,8 +52,8 @@ int main(int argc, const char *argv[])
     {
         // Deserialize the ScriptModule from a file using torch::jit::load().
         // module = torch::jit::load(argv[1]);
-        module = torch::jit::load("/home/hlz/blackhighsea/torch/cartoonGan/model-trace/gan-generator.pt");
-        std::cout << typeid(module).name() << "\n";
+        module = torch::jit::load(argv[1]);
+        // std::cout << typeid(module).name() << "\n";
     }
     catch (const c10::Error &e)
     {
@@ -84,7 +88,7 @@ int main(int argc, const char *argv[])
         return 1;
     }
 
-    cv::imwrite("/home/hlz/blackhighsea/torch/cartoonGan/output/o1.jpg", output_mat);
+    cv::imwrite(argv[3], output_mat);
     
     return 0;
 }
