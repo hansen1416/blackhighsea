@@ -13,7 +13,7 @@ class MLP(torch.nn.Module):
             torch.nn.Flatten(),
             # in_features, out_features
             # bias – If set to False, the layer will not learn an additive bias. Default: True
-            torch.nn.Linear(32 * 32 * 3, 64),
+            torch.nn.Linear(20, 64),
             # torch.nn.Linear(20, 64),
             # torch.nn.Dropout(p=0.2),
             torch.nn.ReLU(),
@@ -45,16 +45,19 @@ if __name__ == "__main__":
     X, y, scaler_x, scaler_y = preprocess.scale_data(df)
 
     x_train = torch.from_numpy(X)
+    x_train = x_train.type(torch.float32)
+    y_train = torch.from_numpy(y)
+    y_train = y_train.type(torch.float32)
 
-    print(x_train.shape)
+    print(X.shape, x_train.shape, y_train.size())
 
-    x_train, y_train = make_blobs(n_samples=40, n_features=32 * 32 * 3, \
-        cluster_std=1.5, shuffle=True)
-    x_train = torch.FloatTensor(x_train)
-    y_train = torch.FloatTensor(blob_label(y_train, 0, [0]))
-    y_train = torch.FloatTensor(blob_label(y_train, 1, [1,2,3]))
+    # x_train, y_train = make_blobs(n_samples=40, n_features=32 * 32 * 3, \
+    #     cluster_std=1.5, shuffle=True)
+    # x_train = torch.FloatTensor(x_train)
+    # y_train = torch.FloatTensor(blob_label(y_train, 0, [0]))
+    # y_train = torch.FloatTensor(blob_label(y_train, 1, [1,2,3]))
 
-    print(x_train.size(), y_train.size())
+    # print(x_train.size(), y_train.size())
 
     # Initialize the MLP
     mlp = MLP()
@@ -66,7 +69,7 @@ if __name__ == "__main__":
     mlp.eval()
 
     mlp.train()
-    epoch = 1
+    epoch = 3
 
     for epoch in range(epoch):
         # sets the gradients to zero before we start backpropagation. 
@@ -75,8 +78,11 @@ if __name__ == "__main__":
         optimizer.zero_grad()
         # Forward pass
         y_pred = mlp(x_train)
+
+        # print(y_pred.size())
+
         # Compute Loss
-        loss = loss_function(y_pred.squeeze(), y_train)
+        loss = loss_function(y_pred.squeeze(), y_train.squeeze())
     
         print('Epoch {}: train loss: {}'.format(epoch, loss.item()))
         # Backward pass

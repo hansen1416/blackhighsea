@@ -17,12 +17,12 @@ def scale_data(df):
 
     df = df.drop('p_close', axis=1)
 
-    print(df)
+    # print(df)
 
     x = df
     y = df[['close']].shift(-1)
 
-    print(x.shape)
+    # print(x.shape)
 
     x_scaler = MinMaxScaler(feature_range=(0,1)).fit(x)
     y_scaler = MinMaxScaler(feature_range=(0,1)).fit(y)
@@ -30,6 +30,6 @@ def scale_data(df):
     features = x_scaler.transform(x)
     target = y_scaler.transform(y)
 
-    print(features.shape)
+    # print(features.shape)
 
     return features, target, x_scaler, y_scaler
