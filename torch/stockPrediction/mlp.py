@@ -48,16 +48,9 @@ if __name__ == "__main__":
     x_train = x_train.type(torch.float32)
     y_train = torch.from_numpy(y)
     y_train = y_train.type(torch.float32)
+    y_train = y_train.view(-1)
 
-    print(X.shape, x_train.shape, y_train.size())
-
-    # x_train, y_train = make_blobs(n_samples=40, n_features=32 * 32 * 3, \
-    #     cluster_std=1.5, shuffle=True)
-    # x_train = torch.FloatTensor(x_train)
-    # y_train = torch.FloatTensor(blob_label(y_train, 0, [0]))
-    # y_train = torch.FloatTensor(blob_label(y_train, 1, [1,2,3]))
-
-    # print(x_train.size(), y_train.size())
+    # print(torch.nonzero(torch.isnan(y_train.view(-1))))
 
     # Initialize the MLP
     mlp = MLP()
@@ -69,7 +62,7 @@ if __name__ == "__main__":
     mlp.eval()
 
     mlp.train()
-    epoch = 3
+    epoch = 300
 
     for epoch in range(epoch):
         # sets the gradients to zero before we start backpropagation. 
@@ -78,11 +71,12 @@ if __name__ == "__main__":
         optimizer.zero_grad()
         # Forward pass
         y_pred = mlp(x_train)
+        y_pred = y_pred.view(-1)
 
-        # print(y_pred.size())
+        # print(y_pred, y_train)
 
         # Compute Loss
-        loss = loss_function(y_pred.squeeze(), y_train.squeeze())
+        loss = loss_function(y_pred, y_train)
     
         print('Epoch {}: train loss: {}'.format(epoch, loss.item()))
         # Backward pass
@@ -93,3 +87,13 @@ if __name__ == "__main__":
         #     print('Loss after mini-batch %5d: %.3f' %
         #             (i + 1, current_loss / 500))
         #     current_loss = 0.0
+
+    test = df.tail(1).drop(['p_close'], axis=1)
+    x_test = scaler_x.transform(test)
+    x_test = torch.from_numpy(x_test)
+    x_test = x_test.type(torch.float32)
+
+    test_pred = mlp(x_test)
+    test_price = scaler_y.inverse_transform(test_pred.detach().numpy())
+
+    print(y_train, test_pred, test_price)

@@ -21,8 +21,10 @@ def scale_data(df):
 
     x = df
     y = df[['close']].shift(-1)
-
-    # print(x.shape)
+    
+    # drop the last row, becasue we shifted the price by 1
+    y.drop(y.tail(1).index, inplace=True)
+    x.drop(x.tail(1).index, inplace=True)
 
     x_scaler = MinMaxScaler(feature_range=(0,1)).fit(x)
     y_scaler = MinMaxScaler(feature_range=(0,1)).fit(y)
