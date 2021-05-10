@@ -43,42 +43,22 @@ def scale_data(df):
 
     return features, target, x_scaler, y_scaler
 
-def lstm_preprocess_data1(df):
-
-    df = df[df['close'] != 0]
-    df = df.sort_values(by='date', ascending=True)
-    
-    # we will just train on all of the data
-    x_train_raw = df.values
-    y_train_raw = df[['close']].values
-
-    sc_x = MinMaxScaler(feature_range=(0,1))
-    sc_y = MinMaxScaler(feature_range=(0,1))
-    # todo, define a global y scaler
-    x_train_scaled = sc_x.fit_transform(x_train_raw)
-    y_train_scaled = sc_y.fit_transform(y_train_raw)
-
-    x_train = []
-    y_train = []
-
-    for i in range(50, len(x_train_scaled)):
-        x_train.append(x_train_scaled[i-50:i,:])
-        y_train.append(y_train_scaled[i,:])
-        
-    x_train, y_train = np.array(x_train), np.array(y_train)
-
-    return x_train, y_train
-
 def lstm_preprocess_data(df):
 
     df = df[df['close'] != 0]
     df = df.sort_values(by='date', ascending=True)
+    # move this logic to fetch_data.py later
+    df = df[:-1]
+
+    # print(df.columns)
     
-    # we will just train on all of the data
-    x_train_raw = df.values
-    y_train_raw = df[['close']].values
+    # we will just train on all of the data, 
+    # we are predicting price change of next day
+    x_train_raw = df.drop(['up_ratio_next'], axis=1).values
+    y_train_raw = df[['up_ratio_next']].values
 
     x_scaler = MinMaxScaler(feature_range=(0,1)).fit(x_train_raw)
+    # consider change range to -1, 1
     y_scaler = MinMaxScaler(feature_range=(0,1)).fit(y_train_raw)
     # todo, define a global y scaler
     x_train_scaled = x_scaler.transform(x_train_raw)
@@ -106,7 +86,15 @@ if __name__ == "__main__":
 
     df = get_stock_data(ticker)
 
-    print(df.columns)
-
     x, y, _, _ = lstm_preprocess_data(df)
+
+    # print(x.shape, y.shape) 
+    # (N, 50, 19) (N, 1)
+
+
+    with open(os.path.join(DATASET_DIR, ticker + '-' + df.index[-1] + '-x.npy'), 'wb') as f:
+        np.save(f, x)
+
+    with open(os.path.join(DATASET_DIR, ticker + '-' + df.index[-1] + '-y.npy'), 'wb') as f:
+        np.save(f, y)
 
