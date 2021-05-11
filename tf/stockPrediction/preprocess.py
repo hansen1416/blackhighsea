@@ -9,7 +9,7 @@ from sklearn.preprocessing import MinMaxScaler
 DATASET_DIR=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'datasets')
 MODEL_DIR=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'models')
 
-def get_stock_data(ticker, shape=13) -> pd.DataFrame:
+def get_stock_data(ticker) -> pd.DataFrame:
 
     df = pd.read_csv(os.path.join(DATASET_DIR, ticker + '.csv'), \
         index_col='date', parse_dates=False)
