@@ -16,7 +16,7 @@ services:
     networks:
       - bhs
     image: hansen1416/bhs-py-api
-    env:
+    environment:
       - FLASK_ENV=development
     ports:
       - 4601:80
@@ -31,6 +31,17 @@ services:
       - 4602:80
     volumes:
       - ${PY_SELENIUM_SOURCE}:/app
+
+  cpp-stylize:
+    networks:
+      - bhs
+    image: hansen1416/bhs-cpp-stylize
+    # ports:
+    #   - 4602:80
+    volumes:
+      - ${CPP_STYLIZE_OPT}:/opt
+      - ${CPP_STYLIZE_EXE}:/mnt
+      - ${CPP_STYLIZE_MODEL}:/mnt
 
 networks:
   bhs:
