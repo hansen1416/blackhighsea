@@ -4,7 +4,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/hlz/blackhighsea/cpp/socket/main.cpp" "/home/hlz/blackhighsea/cpp/socket/build/CMakeFiles/cartoonGan.dir/main.cpp.o"
+  "/home/hlz/blackhighsea/cpp/socket/main3.cpp" "/home/hlz/blackhighsea/cpp/socket/build/CMakeFiles/socket.dir/main3.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 

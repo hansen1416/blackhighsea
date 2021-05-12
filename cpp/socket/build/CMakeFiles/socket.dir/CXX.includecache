@@ -6,27 +6,25 @@
 
 #IncludeRegexTransform: 
 
-/home/hlz/blackhighsea/cpp/socket/main.cpp
+/home/hlz/blackhighsea/cpp/socket/main3.cpp
 stdio.h
--
-stdlib.h
 -
 string.h
 -
-string
+stdlib.h
+-
+errno.h
 -
 unistd.h
+-
+arpa/inet.h
 -
 sys/types.h
 -
 sys/socket.h
 -
-iostream
--
 netinet/in.h
 -
-netdb.h
--
-arpa/inet.h
+sys/time.h
 -
 

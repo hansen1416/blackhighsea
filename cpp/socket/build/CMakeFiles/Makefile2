@@ -53,7 +53,7 @@ CMAKE_BINARY_DIR = /home/hlz/blackhighsea/cpp/socket/build
 # Directory level rules for the build root directory
 
 # The main recursive "all" target.
-all: CMakeFiles/cartoonGan.dir/all
+all: CMakeFiles/socket.dir/all
 
 .PHONY : all
 
@@ -63,36 +63,36 @@ preinstall:
 .PHONY : preinstall
 
 # The main recursive "clean" target.
-clean: CMakeFiles/cartoonGan.dir/clean
+clean: CMakeFiles/socket.dir/clean
 
 .PHONY : clean
 
 #=============================================================================
-# Target rules for target CMakeFiles/cartoonGan.dir
+# Target rules for target CMakeFiles/socket.dir
 
 # All Build rule for target.
-CMakeFiles/cartoonGan.dir/all:
-	$(MAKE) -f CMakeFiles/cartoonGan.dir/build.make CMakeFiles/cartoonGan.dir/depend
-	$(MAKE) -f CMakeFiles/cartoonGan.dir/build.make CMakeFiles/cartoonGan.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/hlz/blackhighsea/cpp/socket/build/CMakeFiles --progress-num=1,2 "Built target cartoonGan"
-.PHONY : CMakeFiles/cartoonGan.dir/all
+CMakeFiles/socket.dir/all:
+	$(MAKE) -f CMakeFiles/socket.dir/build.make CMakeFiles/socket.dir/depend
+	$(MAKE) -f CMakeFiles/socket.dir/build.make CMakeFiles/socket.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/hlz/blackhighsea/cpp/socket/build/CMakeFiles --progress-num=1,2 "Built target socket"
+.PHONY : CMakeFiles/socket.dir/all
 
 # Build rule for subdir invocation for target.
-CMakeFiles/cartoonGan.dir/rule: cmake_check_build_system
+CMakeFiles/socket.dir/rule: cmake_check_build_system
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/hlz/blackhighsea/cpp/socket/build/CMakeFiles 2
-	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/cartoonGan.dir/all
+	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/socket.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/hlz/blackhighsea/cpp/socket/build/CMakeFiles 0
-.PHONY : CMakeFiles/cartoonGan.dir/rule
+.PHONY : CMakeFiles/socket.dir/rule
 
 # Convenience name for target.
-cartoonGan: CMakeFiles/cartoonGan.dir/rule
+socket: CMakeFiles/socket.dir/rule
 
-.PHONY : cartoonGan
+.PHONY : socket
 
 # clean rule for target.
-CMakeFiles/cartoonGan.dir/clean:
-	$(MAKE) -f CMakeFiles/cartoonGan.dir/build.make CMakeFiles/cartoonGan.dir/clean
-.PHONY : CMakeFiles/cartoonGan.dir/clean
+CMakeFiles/socket.dir/clean:
+	$(MAKE) -f CMakeFiles/socket.dir/build.make CMakeFiles/socket.dir/clean
+.PHONY : CMakeFiles/socket.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.

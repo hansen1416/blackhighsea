@@ -14,7 +14,7 @@ int main(int argc, char const *argv[])
     int opt = 1;
     int addrlen = sizeof(address);
     char buffer[1024] = {0};
-    char *hello = "Hello from server";
+    char const *hello = "Hello from server";
        
     // Creating socket file descriptor
     // AF_INET IPv4, SOCK_STREAM TCP, and SOCK_DGRAM is used by UDP

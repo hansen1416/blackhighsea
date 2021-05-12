@@ -111,44 +111,44 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named cartoonGan
+# Target rules for targets named socket
 
 # Build rule for target.
-cartoonGan: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 cartoonGan
-.PHONY : cartoonGan
+socket: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 socket
+.PHONY : socket
 
 # fast build rule for target.
-cartoonGan/fast:
-	$(MAKE) -f CMakeFiles/cartoonGan.dir/build.make CMakeFiles/cartoonGan.dir/build
-.PHONY : cartoonGan/fast
+socket/fast:
+	$(MAKE) -f CMakeFiles/socket.dir/build.make CMakeFiles/socket.dir/build
+.PHONY : socket/fast
 
-main.o: main.cpp.o
+main3.o: main3.cpp.o
 
-.PHONY : main.o
+.PHONY : main3.o
 
 # target to build an object file
-main.cpp.o:
-	$(MAKE) -f CMakeFiles/cartoonGan.dir/build.make CMakeFiles/cartoonGan.dir/main.cpp.o
-.PHONY : main.cpp.o
+main3.cpp.o:
+	$(MAKE) -f CMakeFiles/socket.dir/build.make CMakeFiles/socket.dir/main3.cpp.o
+.PHONY : main3.cpp.o
 
-main.i: main.cpp.i
+main3.i: main3.cpp.i
 
-.PHONY : main.i
+.PHONY : main3.i
 
 # target to preprocess a source file
-main.cpp.i:
-	$(MAKE) -f CMakeFiles/cartoonGan.dir/build.make CMakeFiles/cartoonGan.dir/main.cpp.i
-.PHONY : main.cpp.i
+main3.cpp.i:
+	$(MAKE) -f CMakeFiles/socket.dir/build.make CMakeFiles/socket.dir/main3.cpp.i
+.PHONY : main3.cpp.i
 
-main.s: main.cpp.s
+main3.s: main3.cpp.s
 
-.PHONY : main.s
+.PHONY : main3.s
 
 # target to generate assembly for a file
-main.cpp.s:
-	$(MAKE) -f CMakeFiles/cartoonGan.dir/build.make CMakeFiles/cartoonGan.dir/main.cpp.s
-.PHONY : main.cpp.s
+main3.cpp.s:
+	$(MAKE) -f CMakeFiles/socket.dir/build.make CMakeFiles/socket.dir/main3.cpp.s
+.PHONY : main3.cpp.s
 
 # Help Target
 help:
@@ -158,10 +158,10 @@ help:
 	@echo "... depend"
 	@echo "... rebuild_cache"
 	@echo "... edit_cache"
-	@echo "... cartoonGan"
-	@echo "... main.o"
-	@echo "... main.i"
-	@echo "... main.s"
+	@echo "... socket"
+	@echo "... main3.o"
+	@echo "... main3.i"
+	@echo "... main3.s"
 .PHONY : help
 
 
