@@ -2,6 +2,7 @@ import csv
 import logging
 import os
 import sys
+import socket
 
 from flask import Flask, request
 from flask_cors import CORS
@@ -44,5 +45,24 @@ def prediction(stock_code):
         "pred_close": pred_close,
     }
 
+@app.route("/stylize")
+def stylize():
+
+    HOST, PORT = "172.19.0.4", 8888
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    s.connect((HOST, PORT))
+    for x in range(0, 1):
+        print("Step 1")
+        s.send(b'Hello')
+        print("Step 2")
+        print(str(s.recv(1000)))
+        print(x)
+
+    return {
+        "1": x,
+    }
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", debug=True, port=80)
+    app.run(host="0.0.0.0", debug=os.environ['FLASK_ENV']=='development', port=80)

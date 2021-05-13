@@ -41,7 +41,6 @@ services:
     volumes:
       - ${CPP_STYLIZE_OPT}:/opt
       - ${CPP_STYLIZE_EXE}:/mnt
-      - ${CPP_STYLIZE_MODEL}:/mnt
 
 networks:
   bhs:
