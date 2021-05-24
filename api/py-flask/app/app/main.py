@@ -48,20 +48,24 @@ def prediction(stock_code):
 @app.route("/stylize")
 def stylize():
 
-    HOST, PORT = "172.19.0.4", 8888
+    HOST, PORT = "cpp-stylize", 8888
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     s.connect((HOST, PORT))
-    for x in range(0, 1):
-        print("Step 1")
-        s.send(b'Hello')
-        print("Step 2")
-        print(str(s.recv(1000)))
-        print(x)
+
+    model_path = os.path.join('/sharedvol', 'gan-generator.pt')
+    input_image = os.path.join('/sharedvol', '3.jpg')
+    output_image = os.path.join('/sharedvol', 'o3.jpg')
+
+    send_msg = model_path + " " + input_image + " " + output_image
+
+    s.send(send_msg.encode('ascii'))
+
+    recv_msg = str(s.recv(1024))
 
     return {
-        "1": x,
+        "output": recv_msg,
     }
 
 if __name__ == "__main__":

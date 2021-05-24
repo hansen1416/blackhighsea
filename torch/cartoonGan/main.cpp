@@ -192,7 +192,7 @@ int main(int argc, const char *argv[])
                     //set the string terminating NULL byte on the end 
                     //of the data read 
                     buffer[valread] = '\0';
-
+                    // params is "model_path input_image_path output_image_path"
                     std::vector<std::string> params = split(buffer, ' ');
 
                     if (params.empty() || params.size() != 3) 

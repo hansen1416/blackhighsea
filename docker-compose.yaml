@@ -22,6 +22,7 @@ services:
       - 4601:80
     volumes:
       - ${PY_API_SOURCE}:/app
+      - ${SHARED_DATA}:/sharedvol # input/output images
 
   py-selenium:
     networks:
@@ -40,7 +41,7 @@ services:
     #   - 4602:80
     volumes:
       - ${CPP_STYLIZE_OPT}:/opt
-      - ${CPP_STYLIZE_EXE}:/mnt
+      - ${SHARED_DATA}:/sharedvol # c++ executive, pre-trained model, input/output images
 
 networks:
   bhs:
