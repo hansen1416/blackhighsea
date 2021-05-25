@@ -5,6 +5,9 @@
       @upload="handleImage"
       @delete="deleteImage"
     />
+    <button
+      @click="submitImage"
+    >submit</button>
   </div>
 </template>
 
@@ -19,7 +22,7 @@ export default defineComponent({
   },
   data() {
     return {
-      
+      origin_image: null as unknown as File,
     }
   },
   computed: {
@@ -30,10 +33,24 @@ export default defineComponent({
   // },
   methods: {
     handleImage(files: File[]) {
-      console.log(files[0]);
+      this.origin_image = files[0];
     },
     deleteImage() {
       console.info('deleted');
+    },
+    submitImage() {
+
+      const data = new FormData();
+
+      data.append('origin_image', this.origin_image);
+
+      axios.post('http://localhost:4601/stylize', data)
+      .then(function (response: AxiosResponse){
+        console.log(response);
+      })
+      .catch(function (error: any) {
+        console.log(error);
+      });
     }
   }
 

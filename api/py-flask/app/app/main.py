@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 import socket
+import shutil
 
 from flask import Flask, request
 from flask_cors import CORS
@@ -45,18 +46,21 @@ def prediction(stock_code):
         "pred_close": pred_close,
     }
 
-@app.route("/stylize")
+@app.route("/stylize", methods = ['POST', 'OPTIONS'])
 def stylize():
+
+    model_path = os.path.join('/sharedvol', 'gan-generator.pt')
+    input_image = os.path.join('/sharedvol', 'test.jpg')
+    output_image = os.path.join('/sharedvol', 'test_out.jpg')
+
+    with open(input_image, 'wb') as f:
+        shutil.copyfileobj(request.files['origin_image'], f)
 
     HOST, PORT = "cpp-stylize", 8888
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     s.connect((HOST, PORT))
-
-    model_path = os.path.join('/sharedvol', 'gan-generator.pt')
-    input_image = os.path.join('/sharedvol', '3.jpg')
-    output_image = os.path.join('/sharedvol', 'o3.jpg')
 
     send_msg = model_path + " " + input_image + " " + output_image
 
