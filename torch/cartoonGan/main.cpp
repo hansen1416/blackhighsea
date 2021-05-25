@@ -269,6 +269,7 @@ int stylizeImage(const std::string& model_path, const std::string& input_image_p
 const std::string& output_image_path)
 {
     cv::Mat input_image;
+    // handle (-215:Assertion failed) !_src.empty() in function 'cvtColor'
     cv::Mat read_image = cv::imread(input_image_path);
     if (read_image.empty() || !read_image.data)
         std::cout << "read image fail" << input_image_path << std::endl;

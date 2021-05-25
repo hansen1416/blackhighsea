@@ -7,6 +7,16 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('@/views/Home.vue')
   },
   {
+    path: '/stylize',
+    name: 'stylize',
+    component: () => import('@/views/Stylize.vue')
+  },
+  {
+    path: '/stocks',
+    name: 'stock_list',
+    component: () => import('@/views/StockList.vue')
+  },
+  {
     path: '/pred/hl/:stock_code',
     name: 'pred_hl',
     component: () => import('@/views/LineChart.vue')
