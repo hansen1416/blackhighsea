@@ -10,7 +10,7 @@ from flask_cors import CORS
 
 from stockname import StockNames
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='/sharedvol')
 CORS(app)
 
 LSTM_RESULT_DIR = '/app/data/'

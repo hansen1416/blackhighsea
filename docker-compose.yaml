@@ -9,6 +9,7 @@ services:
       - 4600:8080
     volumes:
       - ${FRONTEND_SOURCE}:/app
+      - ${SHARED_DATA}:/app/public/img/sharedvol
     working_dir: /app
     command: ["npm", "run", "serve"]
 
