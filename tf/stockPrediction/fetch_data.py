@@ -1,14 +1,12 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 import os
 import sys
 
 import pandas as pd
 import talib
 
-DATASET_DIR=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'datasets')
-
-def save_stock_df(df, stock_code) -> None:
-    file_path = os.path.join(DATASET_DIR, stock_code+'.csv')
+def save_stock_df(df, history_dir, stock_code) -> None:
+    file_path = os.path.join(history_dir, stock_code+'.csv')
     df.to_csv(file_path)
     print('stock {0} data saved to {1}'.format(stock_code, file_path))
 
@@ -51,7 +49,7 @@ def expand_basic_data(df) -> pd.DataFrame:
     
     return df
 
-def get_stock_basic_data(stock_code, start_date, end_date, to_file=False, expand_data=False) -> pd.DataFrame:
+def get_stock_basic_data(stock_code, start_date, end_date, history_dir, to_file=False, expand_data=False) -> pd.DataFrame:
     individual_stock_url = 'http://quotes.money.163.com/service/chddata.html?code={0}&start={1}&end={2}&fields=TCLOSE;HIGH;LOW;TOPEN;LCLOSE;VOTURNOVER;'
     rename_columns = {'日期': 'date', '收盘价': 'close', '最高价': 'high', '最低价':'low', '开盘价':'open', '前收盘':'p_close', '成交量': 'volume'}
 
@@ -80,23 +78,23 @@ def get_stock_basic_data(stock_code, start_date, end_date, to_file=False, expand
         df = expand_basic_data(df)
 
     if to_file:
-        save_stock_df(df, stock_code)
+        save_stock_df(df, history_dir, stock_code)
     
     return df
 
 
 if __name__ == "__main__":
 
-    start_date = '20100101'
+    assert len(sys.argv) == 2, "Please pass ticker"
 
-    now = datetime.now()
+    ticker = sys.argv[1]
+
+    start_date = '20100101'
 
     date_string_format = "%Y%m%d"
 
     now_date = datetime.today().strftime(date_string_format)
 
-    assert len(sys.argv) == 2, "Please pass ticker"
+    history_dir=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'datasets')
 
-    ticker = sys.argv[1]
-
-    get_stock_basic_data(ticker, start_date, now_date, to_file=True, expand_data=True)
+    get_stock_basic_data(ticker, start_date, now_date, history_dir, to_file=True, expand_data=True)
