@@ -3,22 +3,17 @@ import sys
 
 import numpy as np
 import pandas as pd
-from pickle import dump, load
+import pickle
 from sklearn.preprocessing import MinMaxScaler
 
-DATASET_DIR=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'datasets')
-MODEL_DIR=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'models')
+def get_stock_data(ticker, datasets_dir) -> pd.DataFrame:
 
-def get_stock_data(ticker) -> pd.DataFrame:
-
-    df = pd.read_csv(os.path.join(DATASET_DIR, ticker + '.csv'), \
+    df = pd.read_csv(os.path.join(datasets_dir, ticker + '.csv'), \
         index_col='date', parse_dates=False)
 
-    return df[['close', 'high', 'low', 'open', 'volume', 'increase_in_vol',
-       'increase_in_close', 'up_ratio', 'up_ratio_next', 'moving_av50',
-       'moving_av30', 'moving_av20', 'moving_av10', 'moving_av5',
-       'ma50_close_ratio', 'ma30_close_ratio', 'ma20_close_ratio',
-       'ma10_close_ratio', 'ma5_close_ratio', 'macd']]
+    return df[['close', 'high', 'low', 'open', 'volume', 'up_ratio', \
+                'increase_in_vol', 'moving_av50', 'moving_av30', \
+                'moving_av20', 'moving_av10', 'moving_av5', 'macd']]
 
 def scale_data(df):
 
@@ -43,40 +38,38 @@ def scale_data(df):
 
     return features, target, x_scaler, y_scaler
 
-def lstm_preprocess_data(df):
+def lstm_preprocess_data(df, ticker, scaler_dir):
 
+    """
+    preprocess the tech data
+    use 50 days window, and scale data to [0,1]
+    """
     df = df[df['close'] != 0]
     df = df.sort_values(by='date', ascending=True)
-    # move this logic to fetch_data.py later
-    df = df[:-1]
-
-    # print(df.columns)
     
-    # we will just train on all of the data, 
-    # we are predicting price change of next day
-    x_train_raw = df.drop(['up_ratio_next'], axis=1).values
-    y_train_raw = df[['up_ratio_next']].values
-
-    x_scaler = MinMaxScaler(feature_range=(0,1)).fit(x_train_raw)
-    # consider change range to -1, 1
-    y_scaler = MinMaxScaler(feature_range=(0,1)).fit(y_train_raw)
-    # todo, define a global y scaler
-    x_train_scaled = x_scaler.transform(x_train_raw)
-    y_train_scaled = y_scaler.transform(y_train_raw)
+    # close price is the target
+    x_train_raw = df.values
+    y_train_raw = df[['close']].values
+    # min-max scaler
+    sc_x = MinMaxScaler(feature_range=(0,1)).fit(x_train_raw)
+    sc_y = MinMaxScaler(feature_range=(0,1)).fit(y_train_raw)
+    
+    x_train_scaled = sc_x.transform(x_train_raw)
+    y_train_scaled = sc_y.transform(y_train_raw)
 
     x_train = []
     y_train = []
-
+    # past 50 days window
     for i in range(50, len(x_train_scaled)):
         x_train.append(x_train_scaled[i-50:i,:])
         y_train.append(y_train_scaled[i,:])
         
     x_train, y_train = np.array(x_train), np.array(y_train)
+    # save scaler to file
+    pickle.dump(sc_x, open(os.path.join(scaler_dir, 'x_scaler_' + ticker + '.pkl'), 'wb'))
+    pickle.dump(sc_y, open(os.path.join(scaler_dir, 'y_scaler_' + ticker + '.pkl'), 'wb'))
 
-    dump(x_scaler, open(os.path.join(MODEL_DIR, 'x_scaler.pkl'), 'wb'))
-    dump(y_scaler, open(os.path.join(MODEL_DIR, 'y_scaler.pkl'), 'wb'))
-
-    return x_train, y_train, x_scaler, y_scaler
+    return x_train, y_train
 
 if __name__ == "__main__":
 
@@ -84,17 +77,12 @@ if __name__ == "__main__":
 
     ticker = sys.argv[1]
 
-    df = get_stock_data(ticker)
+    DATASET_DIR=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'datasets')
+    SCALER_DIR=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'scaler')
 
-    x, y, _, _ = lstm_preprocess_data(df)
+    df = get_stock_data(ticker, DATASET_DIR)
 
-    # print(x.shape, y.shape) 
+    x, y, _, _ = lstm_preprocess_data(df, SCALER_DIR)
+
+    print(x.shape, y.shape)
     # (N, 50, 19) (N, 1)
-
-
-    with open(os.path.join(DATASET_DIR, ticker + '-' + df.index[-1] + '-x.npy'), 'wb') as f:
-        np.save(f, x)
-
-    with open(os.path.join(DATASET_DIR, ticker + '-' + df.index[-1] + '-y.npy'), 'wb') as f:
-        np.save(f, y)
-
