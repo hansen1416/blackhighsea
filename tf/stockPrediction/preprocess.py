@@ -48,8 +48,19 @@ def lstm_preprocess_data(df, ticker, scaler_dir):
     df = df.sort_values(by='date', ascending=True)
     
     # close price is the target
-    x_train_raw = df.values
-    y_train_raw = df[['close']].values
+    x_train_raw = df
+    y_train_raw = df[['close']].shift(-1)
+
+    # print(x_train_raw.tail())
+    # print(y_train_raw.tail())
+
+    # drop the last row, becasue we shifted the price by 1
+    y_train_raw.drop(y_train_raw.tail(1).index, inplace=True)
+    x_train_raw.drop(x_train_raw.tail(1).index, inplace=True)
+
+    # print(x_train_raw.tail())
+    # print(y_train_raw.tail())
+
     # min-max scaler
     sc_x = MinMaxScaler(feature_range=(0,1)).fit(x_train_raw)
     sc_y = MinMaxScaler(feature_range=(0,1)).fit(y_train_raw)
@@ -63,7 +74,8 @@ def lstm_preprocess_data(df, ticker, scaler_dir):
     for i in range(50, len(x_train_scaled)):
         x_train.append(x_train_scaled[i-50:i,:])
         y_train.append(y_train_scaled[i,:])
-        
+    
+    # forget to shift data
     x_train, y_train = np.array(x_train), np.array(y_train)
     # save scaler to file
     pickle.dump(sc_x, open(os.path.join(scaler_dir, 'x_scaler_' + ticker + '.pkl'), 'wb'))
@@ -82,7 +94,7 @@ if __name__ == "__main__":
 
     df = get_stock_data(ticker, DATASET_DIR)
 
-    x, y, _, _ = lstm_preprocess_data(df, SCALER_DIR)
+    x, y = lstm_preprocess_data(df, ticker, SCALER_DIR)
 
     print(x.shape, y.shape)
     # (N, 50, 19) (N, 1)
