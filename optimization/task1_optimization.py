@@ -5,6 +5,7 @@ import numpy as np
 import scipy.sparse
 from numpy.linalg import LinAlgError
 from scipy.special import expit
+from scipy.optimize.linesearch import scalar_search_wolfe2
 
 
 #######################################################
@@ -85,6 +86,33 @@ class LineSearchTool:
             Chosen step size
         """
         # TODO: Implement line search procedures for Armijo, Wolfe and Constant steps.
+        if previous_alpha is None:
+            previous_alpha = self.alpha_0
+
+        if self._method == 'Wolfe':
+
+            next_alpha = scalar_search_wolfe2(oracle.func_directional, \
+                derphi=self.grad_directional, c1=self.c1, c2=self.c2, \
+                phi0=oracle.func_directional(x_k, d_k, 0), derphi0=self.grad_directional(x_k, d_k, 0))
+
+            if next_alpha is None:
+                self._method = 'Armijo'
+            else:
+                return next_alpha
+
+        if self._method == 'Armijo':
+
+            next_alpha = 2*previous_alpha
+
+            while oracle.func_directional(x_k, d_k, next_alpha) > \
+                oracle.func_directional(x_k, d_k, 0) + self.c1 * next_alpha * self.grad_directional(x_k, d_k, 0):
+                next_alpha = next_alpha / 2
+            
+            return next_alpha
+
+        elif self._method == 'Constant':
+            return self.c        
+
         return None
 
 
