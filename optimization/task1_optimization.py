@@ -424,13 +424,14 @@ class LogRegL2Oracle(BaseSmoothOracle):
     def func(self, x):
         # TODO: Implement
         return 1/self.b.shape[0] * \
-            (np.sum(np.log(1+np.exp(-1 * self.b @ self.matvec_Ax))) + \
+            (np.sum(np.log(1+np.exp(-1 * self.matvec_Ax(x)))) + \
                 self.regcoef / 2 * norm(x)**2)
 
     def grad(self, x):
         # TODO: Implement
-        # return 1/self.b.shape[0] * \
-        #     (-1* self.b @  )
+        return 1/self.b.shape[0] * \
+            np.sum(-1* self.matvec_Ax(self.b) / (1+np.exp(self.b @ self.matvec_Ax(x))) + \
+                self.regcoef / 2 * (norm(x) ** -1 * x))
         return None
 
     def hess(self, x):
