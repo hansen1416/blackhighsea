@@ -432,7 +432,6 @@ class LogRegL2Oracle(BaseSmoothOracle):
         return 1/self.b.shape[0] * \
             np.sum(-1* self.matvec_Ax(self.b) / (1+np.exp(self.b @ self.matvec_Ax(x))) + \
                 self.regcoef / 2 * (norm(x) ** -1 * x))
-        return None
 
     def hess(self, x):
         # TODO: Implement
@@ -472,7 +471,21 @@ def grad_finite_diff(func, x, eps=1e-8):
                           >> i <<
     """
     # TODO: Implement numerical estimation of the gradient
-    return (func(x + eps @ np.identity(x.shape[0])) - func(x)) / eps
+    n = x.shape[0]
+    output = np.zeros(n)
+
+    for i in range(n):
+        ei = np.zeros(n)
+        ei[i] = 1
+
+        f1 = func(x + eps * ei)
+        f2 = func(x)
+
+        output[i] = (f1-f2)/eps
+
+    output = output.reshape(n,1)
+
+    return output
 
 
 def hess_finite_diff(func, x, eps=1e-5):
@@ -487,4 +500,21 @@ def hess_finite_diff(func, x, eps=1e-5):
                           >> i <<
     """
     # TODO: Implement numerical estimation of the Hessian
-    return None
+    n = x.shape[0]
+    output = np.matrix(np.zeros(n*n))
+    output = output.reshape(n,n)
+    for i in range(n):
+        for j in range(n):
+            ei = np.zeros(n)
+            ei[i] = 1
+            ej = np.zeros(n)
+            ej[j] = 1
+
+            f1 = func(x + eps * ei + eps * ej)
+            f2 = func(x + eps * ei)
+            f3 = func(x + eps * ej)
+            f4 = func(x)
+
+            output[i,j] = (f1 - f2 - f3 + f4) / (eps * eps)
+
+    return output
