@@ -8,6 +8,7 @@ import scipy.sparse
 from numpy.linalg import LinAlgError, norm
 from scipy.special import expit
 from scipy.optimize.linesearch import scalar_search_wolfe2
+from scipy.linalg import cho_factor, cho_solve
 
 
 #######################################################
@@ -300,7 +301,9 @@ def newton(oracle, x_0, tolerance=1e-5, max_iter=100,
         grad_norm = norm(grad_k)
 
         # (Calculating the direction) Calculate the direction of descent d_k.
-        d_k = (1/hess_k) * grad_k * -1
+        c, low = cho_factor(hess_k)
+        solution = cho_solve((c, low), grad_k)
+        d_k = -1 * solution 
 
         # (Linear search) Find the appropriate step length α_k.
         alpha_k = line_search_tool.line_search(oracle, x_k, d_k, alpha_p)
@@ -423,14 +426,17 @@ class LogRegL2Oracle(BaseSmoothOracle):
 
     def func(self, x):
         # TODO: Implement
+        # return 1/self.b.shape[0] * \
+        #     (np.sum(np.log(1+np.exp(-1 * self.matvec_Ax(x)))) + \
+        #         self.regcoef / 2 * norm(x)**2)
         return 1/self.b.shape[0] * \
-            (np.sum(np.log(1+np.exp(-1 * self.matvec_Ax(x)))) + \
+            (np.sum(np.logaddexp(-1 * self.matvec_Ax(x))) + \
                 self.regcoef / 2 * norm(x)**2)
 
     def grad(self, x):
         # TODO: Implement
         return 1/self.b.shape[0] * \
-            np.sum(-1* self.matvec_Ax(self.b) / (1+np.exp(self.b @ self.matvec_Ax(x))) + \
+            np.sum(-1* self.matvec_Ax(self.b) * expit(self.b @ self.matvec_Ax(x)) + \
                 self.regcoef / 2 * (norm(x) ** -1 * x))
 
     def hess(self, x):
