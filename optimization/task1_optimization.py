@@ -1,9 +1,11 @@
 from datetime import datetime
 from collections import defaultdict
+import time
+import math
 
 import numpy as np
 import scipy.sparse
-from numpy.linalg import LinAlgError
+from numpy.linalg import LinAlgError, norm
 from scipy.special import expit
 from scipy.optimize.linesearch import scalar_search_wolfe2
 
@@ -181,9 +183,50 @@ def gradient_descent(oracle, x_0, tolerance=1e-5, max_iter=10000,
     line_search_tool = get_line_search_tool(line_search_options)
     x_k = np.copy(x_0)
 
+    grad_0_norm = norm(oracle.grad(x_0))
+    stop_criterion = tolerance * grad_0_norm**2
+    
+    alpha_p = None
+
+    start_time = time.time()
+
+    for i in range(max_iter):
+        # (Oracle Call) Calculate f(x_k), ∇f(x_k), etc
+        func_k = oracle.func(x_k)
+        grad_k = oracle.grad(x_k)
+        grad_norm = norm(grad_k)
+
+        # (Calculating the direction) Calculate the direction of descent d_k.
+        d_k = grad_k * -1
+
+        # (Linear search) Find the appropriate step length α_k.
+        alpha_k = line_search_tool.line_search(oracle, x_k, d_k, alpha_p)
+
+        if display:
+            print("iteration {}, func_k {}, grad_k {}, grad_norm {}, x_k: {}, d_k {}, alpha {}"\
+                .format(i, func_k, grad_k, grad_norm, x_k, d_k, alpha_p))
+
+        # (Update) xk+1 ← xk + αkdk.
+        x_k = x_k + alpha_k * d_k
+
+        alpha_p = alpha_k
+
+        if trace:
+            history['x'].append(x_k)
+            history['func'].append(func_k)
+            history['grad_norm'].append(grad_norm)
+            history['time'].append(time.time() - start_time)
+
+        if x_k is None or alpha_k is None or math.isinf(x_k) or math.isinf(alpha_k):
+            return x_k, 'computational_error', history
+
+        # (Stop criterion) If the stop criterion is met, then exit.
+        if grad_norm**2 <= stop_criterion:
+            return x_k, 'success', history
+
     # TODO: Implement gradient descent
     # Use line_search_tool.line_search() for adaptive step size.
-    return x_k, 'success', history
+    return x_k, 'iterations_exceeded', history
 
 
 def newton(oracle, x_0, tolerance=1e-5, max_iter=100,
@@ -242,9 +285,51 @@ def newton(oracle, x_0, tolerance=1e-5, max_iter=100,
     line_search_tool = get_line_search_tool(line_search_options)
     x_k = np.copy(x_0)
 
+    grad_0_norm = norm(oracle.grad(x_0))
+    stop_criterion = tolerance * grad_0_norm**2
+    
+    alpha_p = None
+
+    start_time = time.time()
+
+    for i in range(max_iter):
+        # (Oracle Call) Calculate f(x_k), ∇f(x_k), etc
+        func_k = oracle.func(x_k)
+        grad_k = oracle.grad(x_k)
+        hess_k = oracle.hess(x_k)
+        grad_norm = norm(grad_k)
+
+        # (Calculating the direction) Calculate the direction of descent d_k.
+        d_k = (1/hess_k) * grad_k * -1
+
+        # (Linear search) Find the appropriate step length α_k.
+        alpha_k = line_search_tool.line_search(oracle, x_k, d_k, alpha_p)
+
+        if display:
+            print("iteration {}, func_k {}, grad_k {}, grad_norm {}, x_k: {}, d_k {}, alpha {}"\
+                .format(i, func_k, grad_k, grad_norm, x_k, d_k, alpha_p))
+
+        # (Update) xk+1 ← xk + αkdk.
+        x_k = x_k + alpha_k * d_k
+
+        alpha_p = alpha_k
+
+        if trace:
+            history['x'].append(x_k)
+            history['func'].append(func_k)
+            history['grad_norm'].append(grad_norm)
+            history['time'].append(time.time() - start_time)
+
+        if x_k is None or alpha_k is None or math.isinf(x_k) or math.isinf(alpha_k):
+            return x_k, 'computational_error', history
+
+        # (Stop criterion) If the stop criterion is met, then exit.
+        if grad_norm**2 <= stop_criterion:
+            return x_k, 'success', history
+
     # TODO: Implement Newton's method.
     # Use line_search_tool.line_search() for adaptive step size.
-    return x_k, 'success', history
+    return x_k, 'iterations_exceeded', history
 
 
 #######################################################
@@ -338,11 +423,15 @@ class LogRegL2Oracle(BaseSmoothOracle):
 
     def func(self, x):
         # TODO: Implement
-        return None
+        return 1/self.b.shape[0] * \
+            (np.sum(np.log(1+np.exp(-1 * self.matvec_Ax(x)))) + \
+                self.regcoef / 2 * norm(x)**2)
 
     def grad(self, x):
         # TODO: Implement
-        return None
+        return 1/self.b.shape[0] * \
+            np.sum(-1* self.matvec_Ax(self.b) / (1+np.exp(self.b @ self.matvec_Ax(x))) + \
+                self.regcoef / 2 * (norm(x) ** -1 * x))
 
     def hess(self, x):
         # TODO: Implement
@@ -356,15 +445,15 @@ def create_log_reg_oracle(A, b, regcoef, oracle_type='usual'):
     """
     def matvec_Ax(x):
         # TODO: implement proper matrix-vector multiplication
-        return x
+        return A @ x
 
     def matvec_ATx(x):
         # TODO: implement proper martix-vector multiplication
-        return x
+        return A.T @ x
 
     def matmat_ATsA(s):
         # TODO: Implement
-        return None
+        return A.T @ s @ A
 
     if oracle_type == 'usual':
         oracle = LogRegL2Oracle
@@ -382,7 +471,21 @@ def grad_finite_diff(func, x, eps=1e-8):
                           >> i <<
     """
     # TODO: Implement numerical estimation of the gradient
-    return None
+    n = x.shape[0]
+    output = np.zeros(n)
+
+    for i in range(n):
+        ei = np.zeros(n)
+        ei[i] = 1
+
+        f1 = func(x + eps * ei)
+        f2 = func(x)
+
+        output[i] = (f1-f2)/eps
+
+    output = output.reshape(n,1)
+
+    return output
 
 
 def hess_finite_diff(func, x, eps=1e-5):
@@ -397,4 +500,21 @@ def hess_finite_diff(func, x, eps=1e-5):
                           >> i <<
     """
     # TODO: Implement numerical estimation of the Hessian
-    return None
+    n = x.shape[0]
+    output = np.matrix(np.zeros(n*n))
+    output = output.reshape(n,n)
+    for i in range(n):
+        for j in range(n):
+            ei = np.zeros(n)
+            ei[i] = 1
+            ej = np.zeros(n)
+            ej[j] = 1
+
+            f1 = func(x + eps * ei + eps * ej)
+            f2 = func(x + eps * ei)
+            f3 = func(x + eps * ej)
+            f4 = func(x)
+
+            output[i,j] = (f1 - f2 - f3 + f4) / (eps * eps)
+
+    return output
