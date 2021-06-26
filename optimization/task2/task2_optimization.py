@@ -1,4 +1,7 @@
+from datetime import datetime
+import os
 import sys
+import time
 
 from collections import defaultdict, deque  # Use this for effective implementation of L-BFGS
 
@@ -175,7 +178,7 @@ def lbfgs(oracle, x_0, tolerance=1e-4, max_iter=500, memory_size=10,
     line_search_tool = get_line_search_tool(line_search_options)
     x_k = np.copy(x_0)
 
-    timer = Timer()
+    start_time = time.time()
     converge = False
     alpha_k = None
 
@@ -183,24 +186,20 @@ def lbfgs(oracle, x_0, tolerance=1e-4, max_iter=500, memory_size=10,
     grad_k = oracle.grad(x_k)
 
     for num_iter in range(max_iter + 1):
-        # if np.isinf(x_k).any() or np.isnan(x_k).any():
-        #     return x_k, 'computational_error', history
 
-        f_k = oracle.func(x_k)
-
-        # if np.isinf(grad_k).any() or np.isnan(grad_k).any():
-        #     return x_k, 'computational_error', history
+        func_k = oracle.func(x_k)
 
         grad_norm_k = scipy.linalg.norm(grad_k)
 
         if trace:
-            history['time'].append(timer.seconds())
-            history['func'].append(np.copy(f_k))
+            history['time'].append(time.time() - start_time)
+            history['func'].append(np.copy(func_k))
             history['grad_norm'].append(np.copy(grad_norm_k))
             if x_k.size <= 2:
                 history['x'].append(np.copy(x_k))
 
-        if display: print('step', history['time'][-1] if history else '')
+        if display: 
+            print('step', num_iter, history['time'][-1] if history else '')
 
         if num_iter == 0:
             eps_grad_norm_0 = np.sqrt(tolerance) * grad_norm_k
@@ -208,36 +207,15 @@ def lbfgs(oracle, x_0, tolerance=1e-4, max_iter=500, memory_size=10,
             converge = True
             break
 
-        if num_iter == max_iter: break
-
-
-        def lbfgs_direction(grad, s_trace, y_trace):
-            d = -grad
-
-            if not s_trace:
-                return d
-
-            mus = []
-            for s, y in zip(reversed(s_trace), reversed(y_trace)):
-                mu = np.dot(s, d) / np.dot(s, y)
-                mus.append(mu)
-                d -= mu * y
-
-            d *= np.dot(s_trace[-1], y_trace[-1]) / np.dot(y_trace[-1], y_trace[-1])
-
-            for s, y, mu in zip(s_trace, y_trace, reversed(mus)):
-                beta = np.dot(y, d) / np.dot(s, y)
-                d += (mu - beta) * s
-
-            return d
-
+        if num_iter == max_iter: 
+            break
 
         d_k = lbfgs_direction(grad_k, s_trace, y_trace)
         alpha_k = line_search_tool.line_search(
             oracle, x_k, d_k,
-            2.0 * alpha_k if alpha_k is not None else None
+            2.0 * alpha_k if alpha_k else None
         )
-        x_k += alpha_k * d_k
+        x_k = x_k + alpha_k * d_k
         last_grad_k = np.copy(grad_k)
         grad_k = oracle.grad(x_k)
 
@@ -255,7 +233,25 @@ def lbfgs(oracle, x_0, tolerance=1e-4, max_iter=500, memory_size=10,
     # Use line_search_tool.line_search() for adaptive step size.
     return x_k, 'success', history
 
+def lbfgs_direction(grad, s_trace, y_trace):
+    d = -grad
 
+    if not s_trace:
+        return d
+
+    mus = []
+    for s, y in zip(reversed(s_trace), reversed(y_trace)):
+        mu = np.dot(s, d) / np.dot(s, y)
+        mus.append(mu)
+        d -= mu * y
+
+    d *= np.dot(s_trace[-1], y_trace[-1]) / np.dot(y_trace[-1], y_trace[-1])
+
+    for s, y, mu in zip(s_trace, y_trace, reversed(mus)):
+        beta = np.dot(y, d) / np.dot(s, y)
+        d += (mu - beta) * s
+
+    return d
 #######################################################
 #                                                     #
 #                     ORACLES                         #
