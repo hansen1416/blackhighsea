@@ -600,3 +600,13 @@ if __name__ == '__main__':
     test_line_search()
 
     test_gd_basic()
+
+    test_newton_basic()
+
+    test_gd_1d()
+
+    test_newton_1d()
+
+    test_newton_fail()
+
+    # test_log_reg_oracle()
