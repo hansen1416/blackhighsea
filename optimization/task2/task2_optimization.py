@@ -6,6 +6,7 @@ import numpy as np
 import scipy.sparse
 from numpy.linalg import LinAlgError
 from scipy.special import expit
+from scipy.optimize.linesearch import scalar_search_wolfe2
 
 
 #######################################################
@@ -91,7 +92,29 @@ class LineSearchTool:
             Chosen step size
         """
         # TODO: Implement line search procedures for Armijo, Wolfe and Constant steps.
-        return None
+        phi = lambda alpha: oracle.func_directional(x_k, d_k, alpha)
+        dphi = lambda alpha: oracle.grad_directional(x_k, d_k, alpha)
+        phi0, dphi0 = phi(0), dphi(0)
+        
+        if self._method == 'Wolfe':
+            # \phi^{'}(\alpha_k) \ge c_2 \phi^{'}(0); c_2 \in (0,1)
+            alpha_k, *_ = scalar_search_wolfe2(phi, dphi, phi0, None, dphi0, c1=self.c1, c2=self.c2)
+            if alpha_k is not None:
+                return alpha_k
+            else:
+                self._method = 'Armijo'
+
+        if self._method == 'Armijo':
+            # \phi(\alpha_k) \le \phi(0) + c_1 \alpha_k \phi^{'}(0); c_1 \in (0,1)
+            alpha_k = previous_alpha if previous_alpha is not None else self.alpha_0
+
+            while phi(alpha_k) > (phi0 + alpha_k * dphi0 * self.c1):
+                alpha_k /= 2
+
+            return alpha_k
+
+        elif self._method == 'Constant':
+            return self.c
 
 
 def get_line_search_tool(line_search_options=None):
@@ -324,15 +347,20 @@ class LogRegL2Oracle(BaseSmoothOracle):
 
     def func(self, x):
         # TODO: Implement
-        return None
+        logadd = np.logaddexp(0, - self.b * self.matvec_Ax(x))
+        res = np.linalg.norm(logadd, 1) / self.b.size +\
+              np.linalg.norm(x, 2) ** 2 * self.regcoef / 2
+        return res
 
     def grad(self, x):
         # TODO: Implement
-        return None
+        return self.regcoef * x - self.matvec_ATx(self.b * (expit(-self.b * self.matvec_Ax(x)))) \
+            / self.b.size
 
     def hess(self, x):
         # TODO: Implement
-        return None
+        tmp = expit(self.b * self.matvec_Ax(x))
+        return self.matmat_ATsA(tmp * (1 - tmp)) / self.b.size + self.regcoef * np.identity(x.size)
 
 
 def create_log_reg_oracle(A, b, regcoef, oracle_type='usual'):
@@ -342,15 +370,17 @@ def create_log_reg_oracle(A, b, regcoef, oracle_type='usual'):
     """
     def matvec_Ax(x):
         # TODO: implement proper matrix-vector multiplication
-        return x
+        return A.dot(x)
 
     def matvec_ATx(x):
         # TODO: implement proper martix-vector multiplication
-        return x
+        return A.T.dot(x)
 
     def matmat_ATsA(s):
         # TODO: Implement
-        return None
+        if scipy.sparse.issparse(A):
+            return matvec_ATx(matvec_ATx(scipy.sparse.diags(s)).T)
+        return np.dot(matvec_ATx(np.diag(s)), A)
 
     if oracle_type == 'usual':
         oracle = LogRegL2Oracle
@@ -368,7 +398,16 @@ def grad_finite_diff(func, x, eps=1e-8):
                           >> i <<
     """
     # TODO: Implement numerical estimation of the gradient
-    return None
+    x = np.array(x)
+    e = np.identity(x.shape[0])
+    res = np.zeros(x.shape)
+
+    f = func(x)
+
+    for i in range(x.shape[0]):
+        res[i] = func(x + e[i] * eps) - f
+
+    return res / eps
 
 
 def hess_finite_diff(func, x, eps=1e-5):
@@ -383,4 +422,22 @@ def hess_finite_diff(func, x, eps=1e-5):
                           >> i <<
     """
     # TODO: Implement numerical estimation of the Hessian
-    return None
+    n = x.shape[0]
+
+    output = np.matrix(np.zeros(n*n))
+    output = output.reshape(n,n)
+
+    for i in range(n):
+        for j in range(n):
+            ei = np.zeros(n)
+            ei[i] = 1
+            ej = np.zeros(n)
+            ej[j] = 1
+            f1 = func(x + eps * ei + eps * ej)
+            f2 = func(x + eps * ei)
+            f3 = func(x + eps * ej)
+            f4 = func(x)
+            numdiff = (f1-f2-f3+f4)/(eps*eps)
+            output[i,j] = numdiff
+
+    return output

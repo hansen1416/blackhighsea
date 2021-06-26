@@ -178,61 +178,29 @@ def gradient_descent(oracle, x_0, tolerance=1e-5, max_iter=10000,
     """
     history = defaultdict(list) if trace else None
     line_search_tool = get_line_search_tool(line_search_options)
-    x_k = np.copy(x_0)
-
-    stop_criterion = tolerance * (np.linalg.norm(oracle.grad(x_0))**2)
-    
-    alpha_k = None
-
-    start_time = time.time()
+    x_k, a_k = np.copy(x_0), None
+    norm0, start = np.linalg.norm(oracle.grad(x_0)) ** 2, datetime.now()
+    stop = tolerance * norm0
 
     for i in range(max_iter):
-        # (Oracle Call) Calculate f(x_k), ∇f(x_k), etc
-        func_k = oracle.func(x_k)
-        grad_k = oracle.grad(x_k)
-        grad_norm = np.linalg.norm(grad_k)
+        d_k = -oracle.grad(x_k)
+        a_k = line_search_tool.line_search(
+            oracle,
+            x_k,
+            d_k,
+            2 * a_k if a_k else None
+        )
+        norm = np.linalg.norm(-d_k)
 
-        # (Calculating the direction) Calculate the direction of descent d_k.
-        d_k = - grad_k
+        chk = check(i, x_k, norm, stop, oracle, history, display, trace, start)
+        if chk:
+            return chk
+        x_k = x_k + d_k * a_k
 
-        # (Linear search) Find the appropriate step length α_k.
-        alpha_k = line_search_tool.line_search(oracle, x_k, d_k, 2 * alpha_k if alpha_k else None)
-
-        if display:
-            print("iteration {}, func_k {}, grad_k {}, grad_norm {}, x_k: {}, d_k {}, alpha {}"\
-                .format(i, func_k, grad_k, grad_norm, x_k, d_k, alpha_k))
-
-        if trace:
-            if x_k.size <= 2:
-                history['x'].append(x_k)
-            history['func'].append(func_k)
-            history['grad_norm'].append(grad_norm)
-            history['time'].append(time.time() - start_time)
-
-        # (Stop criterion) If the stop criterion is met, then exit.
-        if grad_norm**2 <= stop_criterion:
-            return x_k, 'success', history
-
-        # (Update) xk+1 ← xk + αkdk.
-        x_k = x_k + d_k * alpha_k
-
-        if x_k is None or alpha_k is None:
-            return x_k, 'computational_error', history
-
-    if trace:
-        if x_k.size <= 2:
-            history['x'].append(x_k)
-        history['func'].append(oracle.func(x_k))
-        history['grad_norm'].append(np.linalg.norm(oracle.grad(x_k)))
-        history['time'].append(time.time() - start_time)
-
-    # logging.info(history)
-
-    if (np.linalg.norm(oracle.grad(x_k)) ** 2 <= stop_criterion):
-        return x_k, 'success', history
-
-    # TODO: Implement gradient descent
-    # Use line_search_tool.line_search() for adaptive step size.
+    chk = check(max_iter, x_k, np.linalg.norm(oracle.grad(x_k)),
+                stop, oracle, history, display, trace, start)
+    if chk:
+        return chk
     return x_k, 'iterations_exceeded', history
 
 def newton(oracle, x_0, tolerance=1e-5, max_iter=100,
