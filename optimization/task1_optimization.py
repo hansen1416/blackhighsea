@@ -89,35 +89,29 @@ class LineSearchTool:
             Chosen step size
         """
         # TODO: Implement line search procedures for Armijo, Wolfe and Constant steps.
-        if previous_alpha is None:
-            previous_alpha = self.alpha_0
-
+        phi = lambda alpha: oracle.func_directional(x_k, d_k, alpha)
+        dphi = lambda alpha: oracle.grad_directional(x_k, d_k, alpha)
+        phi0, dphi0 = phi(0), dphi(0)
+        
         if self._method == 'Wolfe':
-
-            next_alpha = scalar_search_wolfe2(oracle.func_directional, \
-                derphi=self.grad_directional, c1=self.c1, c2=self.c2, \
-                phi0=oracle.func_directional(x_k, d_k, 0), derphi0=self.grad_directional(x_k, d_k, 0))
-
-            if next_alpha is None:
-                self._method = 'Armijo'
+            # \phi^{'}(\alpha_k) \ge c_2 \phi^{'}(0); c_2 \in (0,1)
+            alpha_k, *_ = scalar_search_wolfe2(phi, dphi, phi0, None, dphi0, c1=self.c1, c2=self.c2)
+            if alpha_k is not None:
+                return alpha_k
             else:
-                return next_alpha
+                self._method = 'Armijo'
 
         if self._method == 'Armijo':
+            # \phi(\alpha_k) \le \phi(0) + c_1 \alpha_k \phi^{'}(0); c_1 \in (0,1)
+            alpha_k = previous_alpha if previous_alpha is not None else self.alpha_0
 
-            next_alpha = 2*previous_alpha
+            while phi(alpha_k) > (phi0 + alpha_k * dphi0 * self.c1):
+                alpha_k /= 2
 
-            while oracle.func_directional(x_k, d_k, next_alpha) > \
-                oracle.func_directional(x_k, d_k, 0) + self.c1 * next_alpha * self.grad_directional(x_k, d_k, 0):
-                next_alpha = next_alpha / 2
-            
-            return next_alpha
+            return alpha_k
 
         elif self._method == 'Constant':
-            return self.c        
-
-        return None
-
+            return self.c
 
 def get_line_search_tool(line_search_options=None):
     if line_search_options:
@@ -184,8 +178,7 @@ def gradient_descent(oracle, x_0, tolerance=1e-5, max_iter=10000,
     line_search_tool = get_line_search_tool(line_search_options)
     x_k = np.copy(x_0)
 
-    grad_0_norm = norm(oracle.grad(x_0))
-    stop_criterion = tolerance * grad_0_norm**2
+    stop_criterion = tolerance * norm(oracle.grad(x_0))**2
     
     alpha_p = None
 
@@ -201,7 +194,7 @@ def gradient_descent(oracle, x_0, tolerance=1e-5, max_iter=10000,
         d_k = grad_k * -1
 
         # (Linear search) Find the appropriate step length α_k.
-        alpha_k = line_search_tool.line_search(oracle, x_k, d_k, alpha_p)
+        alpha_k = line_search_tool.line_search(oracle, x_k, d_k, 2 * alpha_p if alpha_p else None)
 
         if display:
             print("iteration {}, func_k {}, grad_k {}, grad_norm {}, x_k: {}, d_k {}, alpha {}"\
@@ -301,12 +294,14 @@ def newton(oracle, x_0, tolerance=1e-5, max_iter=100,
         grad_norm = norm(grad_k)
 
         # (Calculating the direction) Calculate the direction of descent d_k.
-        c, low = cho_factor(hess_k)
-        solution = cho_solve((c, low), grad_k)
-        d_k = -1 * solution 
+        try:
+            c, low = cho_factor(hess_k)
+            d_k = cho_solve((c, low), grad_k)
+        except LinAlgError:
+            return x_k, 'newton_direction_error', history
 
         # (Linear search) Find the appropriate step length α_k.
-        alpha_k = line_search_tool.line_search(oracle, x_k, d_k, alpha_p)
+        alpha_k = line_search_tool.line_search(oracle, x_k, d_k)
 
         if display:
             print("iteration {}, func_k {}, grad_k {}, grad_norm {}, x_k: {}, d_k {}, alpha {}"\
@@ -434,14 +429,11 @@ class LogRegL2Oracle(BaseSmoothOracle):
                 self.regcoef / 2 * norm(x)**2)
 
     def grad(self, x):
-        # TODO: Implement
-        return 1/self.b.shape[0] * \
-            np.sum(-1* self.matvec_Ax(self.b) * expit(self.b @ self.matvec_Ax(x)) + \
-                self.regcoef / 2 * (norm(x) ** -1 * x))
+        return self.regcoef * x - self.matvec_ATx(self.b * (expit(-self.b * self.matvec_Ax(x)))) / self.b.size
 
     def hess(self, x):
-        # TODO: Implement
-        return None
+        tmp = expit(self.b * self.matvec_Ax(x))
+        return self.matmat_ATsA(tmp * (1 - tmp)) / self.b.size + self.regcoef * np.identity(x.size)
 
 
 def create_log_reg_oracle(A, b, regcoef, oracle_type='usual'):
@@ -477,21 +469,16 @@ def grad_finite_diff(func, x, eps=1e-8):
                           >> i <<
     """
     # TODO: Implement numerical estimation of the gradient
-    n = x.shape[0]
-    output = np.zeros(n)
+    x = np.array(x)
+    e = np.identity(x.shape[0])
+    res = np.zeros(x.shape)
 
-    for i in range(n):
-        ei = np.zeros(n)
-        ei[i] = 1
+    f = func(x)
 
-        f1 = func(x + eps * ei)
-        f2 = func(x)
+    for i in range(x.shape[0]):
+        res[i] = func(x + e[i] * eps) - f
 
-        output[i] = (f1-f2)/eps
-
-    output = output.reshape(n,1)
-
-    return output
+    return res / eps
 
 
 def hess_finite_diff(func, x, eps=1e-5):
@@ -507,20 +494,55 @@ def hess_finite_diff(func, x, eps=1e-5):
     """
     # TODO: Implement numerical estimation of the Hessian
     n = x.shape[0]
+
     output = np.matrix(np.zeros(n*n))
     output = output.reshape(n,n)
+
     for i in range(n):
         for j in range(n):
             ei = np.zeros(n)
             ei[i] = 1
             ej = np.zeros(n)
             ej[j] = 1
-
             f1 = func(x + eps * ei + eps * ej)
             f2 = func(x + eps * ei)
             f3 = func(x + eps * ej)
             f4 = func(x)
-
-            output[i,j] = (f1 - f2 - f3 + f4) / (eps * eps)
+            numdiff = (f1-f2-f3+f4)/(eps*eps)
+            output[i,j] = numdiff
 
     return output
+
+if __name__ == '__main__':
+
+    def test_grad_finite_diff_1(A = np.diag([1,1,1]), b = np.array([1, 1, 1]), x = np.zeros(3)):
+        # Quadratic function.
+        quadratic = QuadraticOracle(A, b)
+        gfd = grad_finite_diff(quadratic.func, x)
+
+        gd = quadratic.grad(x)
+
+        print("A:\n", A, "\nb:\n", b, "\nx:\n", \
+            x, "\ngradient result:\n", gd, "\ngradient finite difference\n", gfd)
+
+        if not np.allclose(gd, gfd):
+            print("Wrong answer")
+
+    def test_hess_finite_diff_1(A = np.diag([1,1,1]), b = np.array([1, 1, 1]), \
+        x = np.zeros(3)):
+
+        # Quadratic function.
+        quadratic = QuadraticOracle(A, b)
+
+        hfd = hess_finite_diff(quadratic.func, x)
+        hs = quadratic.hess(x)
+        
+        print("A:\n", A, "\nb:\n", b, "\nx:\n", \
+            x, "\nhessian:\n", hs, "\nhessian finite difference\n", hfd)
+        
+        if not np.allclose(hs, hfd):
+            print("Wrong answer")
+
+    test_grad_finite_diff_1()
+
+    test_hess_finite_diff_1()
