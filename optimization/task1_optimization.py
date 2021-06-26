@@ -178,7 +178,7 @@ def gradient_descent(oracle, x_0, tolerance=1e-5, max_iter=10000,
     line_search_tool = get_line_search_tool(line_search_options)
     x_k = np.copy(x_0)
 
-    stop_criterion = tolerance * norm(oracle.grad(x_0))**2
+    stop_criterion = tolerance * (norm(oracle.grad(x_0))**2)
     
     alpha_p = None
 
@@ -191,7 +191,7 @@ def gradient_descent(oracle, x_0, tolerance=1e-5, max_iter=10000,
         grad_norm = norm(grad_k)
 
         # (Calculating the direction) Calculate the direction of descent d_k.
-        d_k = grad_k * -1
+        d_k = - grad_k
 
         # (Linear search) Find the appropriate step length α_k.
         alpha_k = line_search_tool.line_search(oracle, x_k, d_k, 2 * alpha_p if alpha_p else None)
@@ -201,7 +201,7 @@ def gradient_descent(oracle, x_0, tolerance=1e-5, max_iter=10000,
                 .format(i, func_k, grad_k, grad_norm, x_k, d_k, alpha_p))
 
         # (Update) xk+1 ← xk + αkdk.
-        x_k = x_k + alpha_k * d_k
+        x_k = x_k + d_k * alpha_k
 
         alpha_p = alpha_k
 
@@ -211,7 +211,7 @@ def gradient_descent(oracle, x_0, tolerance=1e-5, max_iter=10000,
             history['grad_norm'].append(grad_norm)
             history['time'].append(time.time() - start_time)
 
-        if x_k is None or alpha_k is None or math.isinf(x_k) or math.isinf(alpha_k):
+        if x_k is None or alpha_k is None:
             return x_k, 'computational_error', history
 
         # (Stop criterion) If the stop criterion is met, then exit.
@@ -424,15 +424,17 @@ class LogRegL2Oracle(BaseSmoothOracle):
         # return 1/self.b.shape[0] * \
         #     (np.sum(np.log(1+np.exp(-1 * self.matvec_Ax(x)))) + \
         #         self.regcoef / 2 * norm(x)**2)
-        return (norm(np.logaddexp(0, -1 * self.matvec_Ax(x)), 1)/self.b.shape[0] + \
-                self.regcoef / 2 * norm(x, 2)**2)
+        logadd = np.logaddexp(0, - self.b * self.matvec_Ax(x))
+        res = np.linalg.norm(logadd, 1) / self.b.size +\
+              np.linalg.norm(x, 2) ** 2 * self.regcoef / 2
+        return res
 
     def grad(self, x):
-        return self.regcoef * x - self.matvec_ATx(self.b * (expit(-self.b * self.matvec_Ax(x)))) / self.b.shape[0]
+        return self.regcoef * x - self.matvec_ATx(self.b * (expit(-self.b * self.matvec_Ax(x)))) / self.b.size
 
     def hess(self, x):
-        return self.matmat_ATsA(expit(self.b * self.matvec_Ax(x)) * (1 - expit(self.b * self.matvec_Ax(x)))) \
-            / self.b.shape[0] + self.regcoef * np.identity(x.shape[0])
+        tmp = expit(self.b * self.matvec_Ax(x))
+        return self.matmat_ATsA(tmp * (1 - tmp)) / self.b.size + self.regcoef * np.identity(x.size)
 
 
 def create_log_reg_oracle(A, b, regcoef, oracle_type='usual'):
@@ -440,6 +442,9 @@ def create_log_reg_oracle(A, b, regcoef, oracle_type='usual'):
     Auxiliary function for creating logistic regression oracles.
         `oracle_type` must be either 'usual' or 'optimized'
     """
+    if scipy.sparse.issparse(A):
+        A = scipy.sparse.csr_matrix(A)
+
     def matvec_Ax(x):
         # TODO: implement proper matrix-vector multiplication
         return A.dot(x)
