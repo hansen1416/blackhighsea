@@ -424,16 +424,15 @@ class LogRegL2Oracle(BaseSmoothOracle):
         # return 1/self.b.shape[0] * \
         #     (np.sum(np.log(1+np.exp(-1 * self.matvec_Ax(x)))) + \
         #         self.regcoef / 2 * norm(x)**2)
-        return 1/self.b.shape[0] * \
-            (np.sum(np.logaddexp(-1 * self.matvec_Ax(x))) + \
-                self.regcoef / 2 * norm(x)**2)
+        return (norm(np.logaddexp(0, -1 * self.matvec_Ax(x)), 1)/self.b.shape[0] + \
+                self.regcoef / 2 * norm(x, 2)**2)
 
     def grad(self, x):
-        return self.regcoef * x - self.matvec_ATx(self.b * (expit(-self.b * self.matvec_Ax(x)))) / self.b.size
+        return self.regcoef * x - self.matvec_ATx(self.b * (expit(-self.b * self.matvec_Ax(x)))) / self.b.shape[0]
 
     def hess(self, x):
-        tmp = expit(self.b * self.matvec_Ax(x))
-        return self.matmat_ATsA(tmp * (1 - tmp)) / self.b.size + self.regcoef * np.identity(x.size)
+        return self.matmat_ATsA(expit(self.b * self.matvec_Ax(x)) * (1 - expit(self.b * self.matvec_Ax(x)))) \
+            / self.b.shape[0] + self.regcoef * np.identity(x.shape[0])
 
 
 def create_log_reg_oracle(A, b, regcoef, oracle_type='usual'):
@@ -443,15 +442,17 @@ def create_log_reg_oracle(A, b, regcoef, oracle_type='usual'):
     """
     def matvec_Ax(x):
         # TODO: implement proper matrix-vector multiplication
-        return A @ x
+        return A.dot(x)
 
     def matvec_ATx(x):
         # TODO: implement proper martix-vector multiplication
-        return A.T @ x
+        return A.T.dot(x)
 
     def matmat_ATsA(s):
         # TODO: Implement
-        return A.T @ s @ A
+        if scipy.sparse.issparse(A):
+            return matvec_ATx(matvec_ATx(scipy.sparse.diags(s)).T)
+        return np.dot(matvec_ATx(np.diag(s)), A)
 
     if oracle_type == 'usual':
         oracle = LogRegL2Oracle
@@ -515,33 +516,69 @@ def hess_finite_diff(func, x, eps=1e-5):
 
 if __name__ == '__main__':
 
-    def test_grad_finite_diff_1(A = np.diag([1,1,1]), b = np.array([1, 1, 1]), x = np.zeros(3)):
+    def test_grad_finite_diff_1(test='logreg', A = np.diag([1,1,1]), b = np.array([1, 1, 1]), x = np.zeros(3)):
         # Quadratic function.
-        quadratic = QuadraticOracle(A, b)
-        gfd = grad_finite_diff(quadratic.func, x)
+        if test == 'quadratic' or test == 'all':
 
-        gd = quadratic.grad(x)
+            quadratic = QuadraticOracle(A, b)
+            gfd = grad_finite_diff(quadratic.func, x)
 
-        print("A:\n", A, "\nb:\n", b, "\nx:\n", \
-            x, "\ngradient result:\n", gd, "\ngradient finite difference\n", gfd)
+            gd = quadratic.grad(x)
 
-        if not np.allclose(gd, gfd):
-            print("Wrong answer")
+            print("A:\n", A, "\nb:\n", b, "\nx:\n", \
+                x, "\ngradient result:\n", gd, "\ngradient finite difference\n", gfd)
 
-    def test_hess_finite_diff_1(A = np.diag([1,1,1]), b = np.array([1, 1, 1]), \
-        x = np.zeros(3)):
+            if not np.allclose(gd, gfd):
+                print("====Wrong answer====")
 
-        # Quadratic function.
-        quadratic = QuadraticOracle(A, b)
+        if test == 'logreg' or test == 'all':
 
-        hfd = hess_finite_diff(quadratic.func, x)
-        hs = quadratic.hess(x)
-        
-        print("A:\n", A, "\nb:\n", b, "\nx:\n", \
-            x, "\nhessian:\n", hs, "\nhessian finite difference\n", hfd)
-        
-        if not np.allclose(hs, hfd):
-            print("Wrong answer")
+            regcoef = 0.5
+
+            logreg = create_log_reg_oracle(A, b, regcoef)
+
+            gfd_lr = grad_finite_diff(logreg.func, x)
+
+            gd_lr = logreg.grad(x)
+
+            print("A:\n", A, "\nb:\n", b, "\nx:\n", \
+                x, "\ngradient result:\n", gd_lr, "\ngradient finite difference\n", gfd_lr)
+
+            if not np.allclose(gd_lr, gfd_lr):
+                print("====Wrong answer====")
+
+    def test_hess_finite_diff_1(test='logreg', A = np.diag([1,2,1]), b = np.array([1, 0, 1]), \
+        x = np.array([2,2,3])):
+
+        if test == 'quadratic' or test == 'all':
+
+            # Quadratic function.
+            quadratic = QuadraticOracle(A, b)
+
+            hfd = hess_finite_diff(quadratic.func, x)
+            hs = quadratic.hess(x)
+            
+            print("A:\n", A, "\nb:\n", b, "\nx:\n", \
+                x, "\nhessian:\n", hs, "\nhessian finite difference\n", hfd)
+            
+            if not np.allclose(hs, hfd):
+                print("====Wrong answer====")
+
+        if test == 'logreg' or test == 'all':
+
+            regcoef = 0.5
+
+            logreg = create_log_reg_oracle(A, b, regcoef)
+
+            hfd_lr = hess_finite_diff(logreg.func, x)
+
+            hs_lr = logreg.hess(x)
+
+            print("A:\n", A, "\nb:\n", b, "\nx:\n", \
+                x, "\nhessian:\n", hs_lr, "\nhessian finite difference\n", hfd_lr)
+
+            if not np.allclose(hs_lr, hfd_lr):
+                print("====Wrong answer====")
 
     test_grad_finite_diff_1()
 
