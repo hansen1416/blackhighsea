@@ -211,20 +211,20 @@ def lbfgs(oracle, x_0, tolerance=1e-4, max_iter=500, memory_size=10,
             break
 
         d_k = lbfgs_direction(grad_k, s_trace, y_trace)
-        alpha_k = line_search_tool.line_search(
-            oracle, x_k, d_k,
-            2.0 * alpha_k if alpha_k else None
-        )
+        alpha_k = line_search_tool.line_search(oracle, x_k, d_k, \
+            2.0 * alpha_k if alpha_k else None)
+
         x_k = x_k + alpha_k * d_k
-        last_grad_k = np.copy(grad_k)
+        grad_k_1 = np.copy(grad_k)
         grad_k = oracle.grad(x_k)
 
         if memory_size > 0:
+            # limited memory, save storage
             if len(s_trace) == memory_size:
                 s_trace.popleft()
                 y_trace.popleft()
             s_trace.append(alpha_k * d_k)
-            y_trace.append(grad_k - last_grad_k)
+            y_trace.append(grad_k - grad_k_1)
 
 
     return x_k, 'success' if converge else 'iterations_exceeded', history
@@ -234,6 +234,11 @@ def lbfgs(oracle, x_0, tolerance=1e-4, max_iter=500, memory_size=10,
     return x_k, 'success', history
 
 def lbfgs_direction(grad, s_trace, y_trace):
+    """
+    H_{k+1} = V^T_k H_kV_k + ρ_k s_k s^T_k
+    ρ_k = \frac{1}{y^T_k s_k}, V_k = I − ρ_k y_k s^T_k,
+    s_k = x_{k+1} − x_k , y_k =  ∇ f_{k+1} − ∇ f_k .
+    """
     d = -grad
 
     if not s_trace:
