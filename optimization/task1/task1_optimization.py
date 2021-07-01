@@ -490,70 +490,15 @@ def hess_finite_diff(func, x, eps=1e-5):
 
 if __name__ == '__main__':
 
-    def test_grad_finite_diff_1(test='logreg', A = np.diag([1,1,1]), b = np.array([1, 1, 1]), x = np.zeros(3)):
-        # Quadratic function.
-        if test == 'quadratic' or test == 'all':
+    A = np.diag([1000,200,3,2])
+    b = np.array([1,0,1,1])
 
-            quadratic = QuadraticOracle(A, b)
-            gfd = grad_finite_diff(quadratic.func, x)
+    quadraticOracle = QuadraticOracle(A, b)
 
-            gd = quadratic.grad(x)
+    # x_0 = np.array([1,2,3,4,5,6,7,8,9])
+    x_0 = np.array([1,2,3,4])
 
-            print("A:\n", A, "\nb:\n", b, "\nx:\n", \
-                x, "\ngradient result:\n", gd, "\ngradient finite difference\n", gfd)
+    x_k, status, history = gradient_descent(quadraticOracle, x_0, trace=True)
 
-            if not np.allclose(gd, gfd):
-                print("====Wrong answer====")
-
-        if test == 'logreg' or test == 'all':
-
-            regcoef = 0.5
-
-            logreg = create_log_reg_oracle(A, b, regcoef)
-
-            gfd_lr = grad_finite_diff(logreg.func, x)
-
-            gd_lr = logreg.grad(x)
-
-            print("A:\n", A, "\nb:\n", b, "\nx:\n", \
-                x, "\ngradient result:\n", gd_lr, "\ngradient finite difference\n", gfd_lr)
-
-            if not np.allclose(gd_lr, gfd_lr):
-                print("====Wrong answer====")
-
-    def test_hess_finite_diff_1(test='logreg', A = np.diag([1,2,1]), b = np.array([1, 0, 1]), \
-        x = np.array([2,2,3])):
-
-        if test == 'quadratic' or test == 'all':
-
-            # Quadratic function.
-            quadratic = QuadraticOracle(A, b)
-
-            hfd = hess_finite_diff(quadratic.func, x)
-            hs = quadratic.hess(x)
-            
-            print("A:\n", A, "\nb:\n", b, "\nx:\n", \
-                x, "\nhessian:\n", hs, "\nhessian finite difference\n", hfd)
-            
-            if not np.allclose(hs, hfd):
-                print("====Wrong answer====")
-
-        if test == 'logreg' or test == 'all':
-
-            regcoef = 0.5
-
-            logreg = create_log_reg_oracle(A, b, regcoef)
-
-            hfd_lr = hess_finite_diff(logreg.func, x)
-
-            hs_lr = logreg.hess(x)
-
-            print("A:\n", A, "\nb:\n", b, "\nx:\n", \
-                x, "\nhessian:\n", hs_lr, "\nhessian finite difference\n", hfd_lr)
-
-            if not np.allclose(hs_lr, hfd_lr):
-                print("====Wrong answer====")
-
-    test_grad_finite_diff_1()
-
-    test_hess_finite_diff_1()
+    print(x_k, status)
+    print(history)
