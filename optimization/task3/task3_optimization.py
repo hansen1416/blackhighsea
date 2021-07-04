@@ -126,6 +126,7 @@ def matvec_ATx(A, x):
     return A.T.dot(x)
 
 def eval_duality_gap(A, x, b, reg_coef, lasso_duality_gap):
+    # Ax∗ − b = µ∗
     if lasso_duality_gap is None:
         return None
     Ax_b = matvec_Ax(A, x) - b
@@ -259,10 +260,7 @@ def newton_barrier_lasso(oracle, tATA, x_0, u_0, tolerance=1e-5, max_iter=100, t
             theta * (u_k + x_k)[idxs_2] / d_2[idxs_2]
         ]).min()
 
-        try:
-            alpha_k = line_search_tool.line_search(oracle, x, np.concatenate((d_x, d_u)), alpha_0)
-        except Exception:
-            return (x_k, u_k), 'computational_error'
+        alpha_k = line_search_tool.line_search(oracle, x, np.concatenate((d_x, d_u)), alpha_0)
 
         x_k = x_k + alpha_k * d_x
         u_k = u_k + alpha_k * d_u
@@ -389,7 +387,7 @@ def barrier_method_lasso(A, b, reg_coef, x_0, u_0, tolerance=1e-5,
             tolerance=tolerance_inner,
             max_iter=max_iter_inner,
         )
-
+        # t_{k+1} := γt_k
         t_k *= gamma
 
     return (x_k, u_k), 'success' if converge else 'iterations_exceeded', history
