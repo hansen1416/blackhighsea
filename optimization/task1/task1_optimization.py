@@ -197,7 +197,7 @@ def gradient_descent(oracle, x_0, tolerance=1e-5, max_iter=10000,
             return chk
         x_k = x_k + d_k * a_k
 
-        if x_k is None or a_k is None or math.isinf(a_k):
+        if x_k is None or a_k is None or math.isinf(a_k) or np.any(np.isinf(x_k)):
             return x_k, 'computational_error', history
 
     chk = check(max_iter, x_k, np.linalg.norm(oracle.grad(x_k)),
@@ -280,7 +280,7 @@ def newton(oracle, x_0, tolerance=1e-5, max_iter=100,
         a_k = line_search_tool.line_search(oracle, x_k, d_k)
         x_k = x_k + d_k * a_k
 
-        if x_k is None or a_k is None or math.isinf(a_k) or d_k is None:
+        if x_k is None or a_k is None or math.isinf(a_k) or np.any(np.isinf(x_k)):
             return x_k, 'computational_error', history
 
     chk = check(max_iter, x_k, np.linalg.norm(oracle.grad(x_k)),
