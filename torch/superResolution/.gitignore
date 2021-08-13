@@ -1,0 +1,5 @@
+build/*
+model-trace/*
+*.pt
+input/*
+output/*
