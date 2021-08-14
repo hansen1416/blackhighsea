@@ -8,7 +8,7 @@
 
         <div class="nav">
             <router-link :to="{ name: 'stylize' }">
-                <span>stylize</span>
+                <span>{{ t('pictures') }}</span>
             </router-link>
         </div>
     </div>
@@ -18,10 +18,21 @@
 import { defineComponent } from "vue";
 // import axios, {AxiosResponse} from "axios";
 import Greeting from "@/components/Greeting.vue";
+import { useI18n } from 'vue-i18n'
 
 export default defineComponent({
     components: {
         Greeting,
+    },
+    setup() {
+        const { t } = useI18n({
+            inheritLocale: true,
+            useScope: 'local'
+        })
+
+        // Something todo ..
+
+        return { t }
     },
     data() {
         return {
