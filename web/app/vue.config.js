@@ -9,5 +9,14 @@ module.exports = {
       compositionOnly: false,
       fullInstall: true
     }
-  }
+  },
+  devServer: {
+    proxy: {
+        '/socket.io': {
+            target: 'http://localhost:4601',
+            ws: true,
+            changeOrigin: true,
+        }
+    }
+}
 }

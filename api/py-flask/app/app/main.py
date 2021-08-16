@@ -1,99 +1,67 @@
-import csv
+# import csv
 import logging
 import os
 import sys
 import socket
 import shutil
-import selectors
-import traceback
-
-import libclient
 
 from flask import Flask, request
 from flask_cors import CORS
+from flask_socketio import SocketIO, emit
+
+# log_format = "%(levelname)s %(asctime)s - %(message)s"
+
+# logging.basicConfig(stream = sys.stdout, format = log_format, level = logging.INFO)
+# logger = logging.getLogger()
 
 # from stockname import StockNames
 
-sel = selectors.DefaultSelector()
+# app = Flask(__name__, static_url_path='/sharedvol')
+app = Flask(__name__)
+# CORS(app)
 
-def create_request(action, value):
-    if action == "search":
-        return dict(
-            type="text/json",
-            encoding="utf-8",
-            content=dict(action=action, value=value),
-        )
-    else:
-        return dict(
-            type="binary/custom-client-binary-type",
-            encoding="binary",
-            content=bytes(action + value, encoding="utf-8"),
-        )
+app.config['SECRET_KEY'] = 'secret!'
+socketio = SocketIO(app, cors_allowed_origins="http://localhost:4600")
 
+# @socketio.on('message')
+# def handle_message(data):
+#     print('received message: ' + data)
 
-def start_connection(host, port, request):
-    addr = (host, port)
-    print("starting connection to", addr)
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.setblocking(False)
-    sock.connect_ex(addr)
-    events = selectors.EVENT_READ | selectors.EVENT_WRITE
-    message = libclient.Message(sel, sock, addr, request)
-    sel.register(sock, events, data=message)
+@app.route('/')
+def index():
+    return {1: 2}
 
-app = Flask(__name__, static_url_path='/sharedvol')
-CORS(app)
+@socketio.event
+def my_event(message):
+    emit('my response', {'data': 'got it!'})
 
 
-@app.route("/stylize", methods = ['POST', 'OPTIONS'])
-def stylize():
 
-    host, port = "cpp-stylize", 8888
-    action, value = "some action", "some value"
-    request = create_request(action, value)
-    start_connection(host, port, request)
+# @app.route("/stylize", methods = ['POST', 'OPTIONS'])
+# def stylize():
 
-    try:
-        while True:
-            events = sel.select(timeout=1)
-            for key, mask in events:
-                message = key.data
-                try:
-                    message.process_events(mask)
-                except Exception:
-                    print(
-                        "main: error: exception for",
-                        f"{message.addr}:\n{traceback.format_exc()}",
-                    )
-                    message.close()
-            # Check for a socket being monitored to continue.
-            if not sel.get_map():
-                break
-    finally:
-        sel.close()
+#     model_path = os.path.join('/sharedvol', 'gan-generator.pt')
+#     input_image = os.path.join('/sharedvol', 'test.jpg')
+#     output_image = os.path.join('/sharedvol', 'test_out.jpg')
 
-    # model_path = os.path.join('/sharedvol', 'gan-generator.pt')
-    # input_image = os.path.join('/sharedvol', 'test.jpg')
-    # output_image = os.path.join('/sharedvol', 'test_out.jpg')
+#     with open(input_image, 'wb') as f:
+#         shutil.copyfileobj(request.files['origin_image'], f)
 
-    # with open(input_image, 'wb') as f:
-    #     shutil.copyfileobj(request.files['origin_image'], f)
+#     HOST, PORT = "py-cartoongan", 65432
 
-    # HOST, PORT = "cpp-stylize", 8888
+#     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    # s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#     s.connect((HOST, PORT))
 
-    # s.connect((HOST, PORT))
+#     send_msg = model_path + " " + input_image + " " + output_image
 
-    # send_msg = model_path + " " + input_image + " " + output_image
+#     s.send(send_msg.encode('ascii'))
 
-    # s.send(send_msg.encode('ascii'))
+#     recv_msg = str(s.recv(1024))
 
-    # recv_msg = str(s.recv(1024))
-
-    # return {
-    #     "output": recv_msg,
-    # }
+#     return {
+#         "output": 'dasdasd',
+#     }
 
 
 # LSTM_RESULT_DIR = '/app/data/'
@@ -130,4 +98,5 @@ def stylize():
 #     }
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", debug=os.environ['FLASK_ENV']=='development', port=80)
+    # app.run(host="0.0.0.0", debug=os.environ['FLASK_ENV']=='development', port=80)
+    socketio.run(app, debug=os.environ['FLASK_ENV']=='development', port=80)

@@ -13,17 +13,30 @@ services:
     working_dir: /app
     command: ["npm", "run", "serve"]
 
-  py-api:
+  # py-api:
+  #   networks:
+  #     - bhs
+  #   image: hansen1416/bhs-py-api
+  #   environment:
+  #     - FLASK_ENV=development
+  #   ports:
+  #     - 4601:80
+  #   volumes:
+  #     - ${PY_API_SOURCE}:/app
+  #     - ${SHARED_DATA}:/sharedvol # input/output images
+  #   command: ["python", "-u", "./wsserver.py"]
+
+  py-websocket:
     networks:
       - bhs
-    image: hansen1416/bhs-py-api
-    environment:
-      - FLASK_ENV=development
+    image: hansen1416/bhs-py-websocket
     ports:
-      - 4601:80
+      - 4601:4601
     volumes:
-      - ${PY_API_SOURCE}:/app
+      - ${PY_WEBSOCKET_SOURCE}:/app
       - ${SHARED_DATA}:/sharedvol # input/output images
+    command: ["python3", "-u", "./wsserver.py"]
+    # command: ["tail", "-f", "/dev/null"]
 
   py-cartoongan:
     networks:
@@ -35,7 +48,7 @@ services:
       - 65432:65432
     volumes:
       - ${PY_CARTOONGAN}:/app
-    command: ["./app-server.py", "65432"]
+    command: ["python", "-u", "./app-server.py", "65432"]
   
 
   # py-selenium:

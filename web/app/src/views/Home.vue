@@ -24,6 +24,8 @@ export default defineComponent({
     components: {
         Greeting,
     },
+    // created () {
+    // },
     setup() {
         const { t } = useI18n({
             inheritLocale: true,
