@@ -35,7 +35,7 @@ services:
     volumes:
       - ${PY_WEBSOCKET_SOURCE}:/app
       - ${SHARED_DATA}:/sharedvol # input/output images
-    command: ["python3", "-u", "./index.py"]
+    command: ["python3", "-u", "./wsserver.py"]
     # command: ["tail", "-f", "/dev/null"]
 
   py-cartoongan:
