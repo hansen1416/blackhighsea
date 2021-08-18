@@ -15,8 +15,6 @@
 import { defineComponent } from 'vue';
 import axios, {AxiosResponse} from "axios";
 import UploadImages from "@/components/UploadImages.vue";
-// import { io } from "socket.io-client";
-
 
 export default defineComponent({
   components: {
@@ -25,22 +23,31 @@ export default defineComponent({
   data() {
     return {
       origin_image: null as unknown as File,
+      ws: null as unknown as WebSocket,
     }
   },
+  created() {
+        this.ws = new WebSocket("ws://127.0.0.1:4601/");
+
+        this.ws.onopen = () => {
+            console.log('ws Connected.');
+
+            this.ws.send(123123123 + '');
+        };
+
+        this.ws.onmessage = (event) => {
+            console.log(event);
+        };
+
+        this.ws.onclose = () => {
+            console.log('ws Connection is closed...');
+        };
+
+        
+    },
   computed: {
 
   },
-  // created() {
-
-  // },
-  sockets: {
-        connect: function () {
-            console.log('socket connected')
-        },
-        customEmit: function (data: any) {
-            console.log('this method was fired by the socket server. eg: io.emit("customEmit", data)')
-        }
-    },
   methods: {
     handleImage(files: File[]) {
       this.origin_image = files[0];

@@ -26,7 +26,7 @@ logger = logging.getLogger()
 async def time(websocket, path):
     while True:
         now = datetime.datetime.utcnow().isoformat() + "Z"
-        await websocket.send(now)
+        # await websocket.send(now)
         await asyncio.sleep(random.random() * 3)
 
 start_server = websockets.serve(time, "", 4601)

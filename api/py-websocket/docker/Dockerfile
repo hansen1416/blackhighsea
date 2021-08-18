@@ -13,9 +13,10 @@ RUN apt-get -y update \
     && apt-get -y install git python3-pip
 
 # Install project requirements
-RUN pip3 install asyncio websockets setuptools
+# RUN pip3 install asyncio websockets setuptools
+RUN pip3 install tornado
 
-EXPOSE 8080
+EXPOSE 4601
 
 WORKDIR /app
 # CMD ["python3", "python-websockets_websocket-benchmark-server.py"]
