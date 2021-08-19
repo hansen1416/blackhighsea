@@ -14,7 +14,7 @@ RUN apt-get -y update \
 
 # Install project requirements
 # RUN pip3 install asyncio websockets setuptools
-RUN pip3 install tornado
+RUN pip3 install numpy tornado opencv-python
 
 EXPOSE 4601
 

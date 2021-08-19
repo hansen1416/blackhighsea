@@ -133,8 +133,10 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
     def on_message(self, message):
         logging.info("got message {} from uuid: {}".format(message, self.uuid))
 
-        # if isinstance(message, type(b'')):
-        #     CartoonGANHandler.load_file(self.uuid, message)
+        if isinstance(message, type(b'')):
+            logging.info(type(message))
+
+            # CartoonGANHandler.load_file(self.uuid, message)
         # else:
         #     logging.info("page_no: " + message)
 

@@ -16,7 +16,7 @@ export default defineComponent({
     },
     data() {
         return {
-            origin_image: (null as unknown) as File,
+            origin_image: (null as unknown) as Blob,
             ws: (null as unknown) as WebSocket,
         };
     },
@@ -44,9 +44,30 @@ export default defineComponent({
             console.info("deleted");
         },
         submitImage() {
-            const data = new FormData();
 
-            this.ws.send(this.origin_image);
+            this.origin_image.arrayBuffer()
+            .then(buffer => {
+                this.ws.send(buffer);
+            })
+
+            // console.log(this.origin_image instanceof Blob);
+
+            // const reader = new FileReader();
+            // let rawData = new ArrayBuffer();
+
+            // reader.onload = function(evt) {
+            //     rawData = evt.target.result;
+
+            //     console.log(rawData);
+
+            //     // ws.send(rawData);
+            // }
+
+            // reader.readAsArrayBuffer(this.origin_image);
+
+            // const data = new FormData();
+
+            // this.ws.send({file: this.origin_image});
 
             // data.append("origin_image", this.origin_image);
 
