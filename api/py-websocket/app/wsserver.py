@@ -44,42 +44,42 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
         self.uuid = None
 
     @classmethod
-    def send_message(cls, doc_uuid, client):
-        clients_with_uuid = cls.clients[doc_uuid]
+    def send_message(self, doc_uuid, client):
+        clients_with_uuid = self.clients[doc_uuid]
         logging.info("sending message to %d clients", len(clients_with_uuid))
 
-        message = cls.make_message(doc_uuid)
+        message = self.make_message(doc_uuid)
         client.write_message(message)
 
     @classmethod
-    def make_message(cls, doc_uuid):
-        rows = cls.files[doc_uuid]["rows"]
-        page_no = cls.files[doc_uuid]["page_no"]
+    def make_message(self, doc_uuid):
+        rows = self.files[doc_uuid]["rows"]
+        page_no = self.files[doc_uuid]["page_no"]
 
         return {
             "uuid": doc_uuid,
             "page_no": page_no,
             "total_number": len(rows),
-            "data": rows[cls.page_size * (page_no - 1):cls.page_size * page_no]
+            "data": rows[self.page_size * (page_no - 1):self.page_size * page_no]
         }
 
     @classmethod
-    def load_file(cls, doc_uuid, tsv_file):
+    def load_file(self, doc_uuid, tsv_file):
         if not (bytes is str):
             tsv_file = str(tsv_file, 'utf-8')
         lines = ( x.strip() for x in tsv_file.splitlines() if x.strip() )
         rows = list( csv.reader(lines, delimiter="\t") )
 
-        cls.files[doc_uuid] = {"rows": rows, "page_no": 1}
+        self.files[doc_uuid] = {"rows": rows, "page_no": 1}
 
     @classmethod
     @tornado.gen.coroutine
-    def add_clients(cls, doc_uuid, client):
+    def add_clients(self, doc_uuid, client):
         logging.info("add a client with (uuid: %s)" % doc_uuid)
 
         # locking clients
         with (yield lock.acquire()):
-            if doc_uuid in cls.clients:
+            if doc_uuid in self.clients:
                 clients_with_uuid = CartoonGANHandler.clients[doc_uuid]
                 clients_with_uuid.append(client)
             else:
@@ -87,20 +87,20 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
 
     @classmethod
     @tornado.gen.coroutine
-    def remove_clients(cls, doc_uuid, client):
+    def remove_clients(self, doc_uuid, client):
         logging.info("remove a client with (uuid: %s)" % doc_uuid)
 
         # locking clients
         with (yield lock.acquire()):
-            if doc_uuid in cls.clients:
+            if doc_uuid in self.clients:
                 clients_with_uuid = CartoonGANHandler.clients[doc_uuid]
                 clients_with_uuid.remove(client)
 
                 if len(clients_with_uuid) == 0:
-                    del cls.clients[doc_uuid]
+                    del self.clients[doc_uuid]
 
-            if doc_uuid not in cls.clients and doc_uuid in cls.files:
-                del cls.files[doc_uuid]
+            if doc_uuid not in self.clients and doc_uuid in self.files:
+                del self.files[doc_uuid]
 
     def check_origin(self, origin):
         return options.debug or bool(re.match(r'^.*\catlog\.kr', origin))
@@ -131,14 +131,15 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
         CartoonGANHandler.remove_clients(self.uuid, self)
 
     def on_message(self, message):
-        logging.info("got message (uuid: %s)" % self.uuid)
-        if isinstance(message, type(b'')):
-            CartoonGANHandler.load_file(self.uuid, message)
-        else:
-            logging.info("page_no: " + message)
+        logging.info("got message {} from uuid: {}".format(message, self.uuid))
 
-            page_no = int(message)
-            CartoonGANHandler.files[self.uuid]["page_no"] = page_no
+        # if isinstance(message, type(b'')):
+        #     CartoonGANHandler.load_file(self.uuid, message)
+        # else:
+        #     logging.info("page_no: " + message)
+
+        #     page_no = int(message)
+        #     CartoonGANHandler.files[self.uuid]["page_no"] = page_no
 
 if __name__ == "__main__":
     parse_command_line()

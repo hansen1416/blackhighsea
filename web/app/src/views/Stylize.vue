@@ -25,8 +25,6 @@ export default defineComponent({
 
         this.ws.onopen = () => {
             console.log("ws Connected.");
-
-            this.ws.send(123123123 + "");
         };
 
         this.ws.onmessage = (event) => {
@@ -48,16 +46,18 @@ export default defineComponent({
         submitImage() {
             const data = new FormData();
 
-            data.append("origin_image", this.origin_image);
+            this.ws.send(this.origin_image);
 
-            axios
-                .post("http://localhost:4601/stylize", data)
-                .then(function (response: AxiosResponse) {
-                    console.log(response);
-                })
-                .catch(function (error: any) {
-                    console.log(error);
-                });
+            // data.append("origin_image", this.origin_image);
+
+            // axios
+            //     .post("http://localhost:4601/stylize", data)
+            //     .then(function (response: AxiosResponse) {
+            //         console.log(response);
+            //     })
+            //     .catch(function (error: any) {
+            //         console.log(error);
+            //     });
         },
     },
 });
