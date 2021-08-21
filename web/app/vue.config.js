@@ -11,12 +11,16 @@ module.exports = {
     }
   },
   devServer: {
-    proxy: {
-        '/socket.io': {
-            target: 'http://localhost:4601',
-            ws: true,
-            changeOrigin: true,
-        }
-    }
-}
+    hot: false,
+    liveReload: false
+  }
+//   devServer: {
+//     proxy: {
+//         '/socket.io': {
+//             target: 'http://localhost:4601',
+//             ws: true,
+//             changeOrigin: true,
+//         }
+//     }
+// }
 }

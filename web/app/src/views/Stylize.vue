@@ -52,6 +52,8 @@ export default defineComponent({
                 this.ws.send(buffer);
             })
 
+            return false;
+
             // console.log(this.origin_image instanceof Blob);
 
             // const reader = new FileReader();
