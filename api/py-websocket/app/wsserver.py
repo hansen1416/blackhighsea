@@ -7,6 +7,7 @@ import sys
 # import glob
 import socket
 
+import asyncio
 import numpy as np
 import cv2
 import tornado.escape
@@ -139,11 +140,13 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
     @classmethod
     async def cartoongan(cls, input_image):
 
+        logging.info('start cartoon gan')
+
         model_path = os.path.join('/sharedvol', 'gan-generator.pt')
         # input_image = os.path.join('/sharedvol', 'test.jpg')
         output_image = os.path.join('/sharedvol', 'test_out.jpg')
 
-        HOST, PORT = "cpp-stylize", 4602
+        HOST, PORT = "cpp-stylize", 8888
 
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -153,16 +156,23 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
 
         s.send(send_msg.encode('ascii'))
 
-        recv_msg = await str(s.recv(1024))
+        recv_msg = s.recv(1024)
 
-        cls.send_message(recv_msg)
+        while True:
+            recv_msg = s.recv(1024)
+            # identity, msg = await s.recv_multipart()
+            # asyncio.ensure_future(s.send_multipart([identity, msg]))
+
+            logging.info(recv_msg)
+
+        cls.send_message(str(recv_msg))
 
     def on_message(self, message):
         logging.info("got message from uuid: {}".format(self.uuid))
 
         if isinstance(message, type(b'')):
 
-            imahe_name = os.path.join('/sharedvol', self.uuid + '.jpg')
+            image_name = os.path.join('/sharedvol', self.uuid + '.jpg')
 
             # read image from string
             nparr = np.fromstring(message, np.uint8)
@@ -170,15 +180,17 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
 
             # logging.info(type(img_np))
 
-            cv2.imwrite(imahe_name, img_np)
+            cv2.imwrite(image_name, img_np)
 
-            logging.info('saved image to ' + imahe_name)
+            logging.info('saved image to ' + image_name)
 
             # The IOLoop will catch the exception and print a stack trace in
             # the logs. Note that this doesn't look like a normal call, since
             # we pass the function object to be called by the IOLoop.
             tornado.ioloop.IOLoop.current().\
-                spawn_callback(self.cartoongan, imahe_name)
+                spawn_callback(self.cartoongan, image_name)
+
+            logging.info('on message finished')
 
 
 

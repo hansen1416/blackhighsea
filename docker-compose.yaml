@@ -65,7 +65,7 @@ services:
       - bhs
     image: hansen1416/bhs-cpp-stylize
     ports:
-      - 4602:80
+      - 4602:8888
     volumes:
       - ${CPP_STYLIZE_OPT}:/opt
       - ${SHARED_DATA}:/sharedvol # c++ executive, pre-trained model, input/output images
