@@ -50,8 +50,11 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
 
     @classmethod
     def send_message(cls, doc_uuid, client, message):
+
         clients_with_uuid = cls.clients[doc_uuid]
         logging.info("sending message to %d clients", len(clients_with_uuid))
+
+        logging.info("send message" + message)
 
         # message = cls.make_message(doc_uuid)
         client.write_message(message)
@@ -85,24 +88,6 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
 
             if doc_uuid not in cls.clients and doc_uuid in cls.files:
                 del cls.files[doc_uuid]
-
-    # @classmethod
-    # def create_video_from_image(cls):
-    #     img_array = []
-    #     for filename in glob.glob('C:/New folder/Images/*.jpg'):
-    #         img = cv2.imread(filename)
-    #         height, width, layers = img.shape
-    #         size = (width,height)
-    #         img_array.append(img)
-        
-        
-    #     out = cv2.VideoWriter('project.avi',cv2.VideoWriter_fourcc(*'DIVX'), 15, size)
-        
-    #     for i in range(len(img_array)):
-    #         out.write(img_array[i])
-
-    #     cv2.destroyAllWindows()        
-    #     out.release()
 
     def check_origin(self, origin):
         return options.debug or bool(re.match(r'^.*\catlog\.kr', origin))
@@ -138,7 +123,7 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
         CartoonGANHandler.remove_clients(self.uuid, self)
 
     @classmethod
-    async def cartoongan(cls, input_image):
+    async def cartoongan(cls, uuid, client, input_image):
 
         logging.info('start cartoon gan')
 
@@ -156,16 +141,16 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
 
         s.send(send_msg.encode('ascii'))
 
+        # while True:
         recv_msg = s.recv(1024)
+        # identity, msg = await s.recv_multipart()
+        # asyncio.ensure_future(s.send_multipart([identity, msg]))
 
-        while True:
-            recv_msg = s.recv(1024)
-            # identity, msg = await s.recv_multipart()
-            # asyncio.ensure_future(s.send_multipart([identity, msg]))
+        if type(recv_msg) == type(b''):
 
-            logging.info(recv_msg)
+            cls.send_message(uuid, client, str(recv_msg))
 
-        cls.send_message(str(recv_msg))
+            logging.info('send message back to '+ uuid)
 
     def on_message(self, message):
         logging.info("got message from uuid: {}".format(self.uuid))
@@ -188,10 +173,27 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
             # the logs. Note that this doesn't look like a normal call, since
             # we pass the function object to be called by the IOLoop.
             tornado.ioloop.IOLoop.current().\
-                spawn_callback(self.cartoongan, image_name)
+                spawn_callback(self.cartoongan, self.uuid, self, image_name)
 
             logging.info('on message finished')
 
+    # @classmethod
+    # def create_video_from_image(cls):
+    #     img_array = []
+    #     for filename in glob.glob('C:/New folder/Images/*.jpg'):
+    #         img = cv2.imread(filename)
+    #         height, width, layers = img.shape
+    #         size = (width,height)
+    #         img_array.append(img)
+        
+        
+    #     out = cv2.VideoWriter('project.avi',cv2.VideoWriter_fourcc(*'DIVX'), 15, size)
+        
+    #     for i in range(len(img_array)):
+    #         out.write(img_array[i])
+
+    #     cv2.destroyAllWindows()        
+    #     out.release()
 
 
 if __name__ == "__main__":

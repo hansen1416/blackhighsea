@@ -21,6 +21,8 @@ export default defineComponent({
         };
     },
     created() {
+        console.log("Stylize created");
+
         this.ws = new WebSocket("ws://127.0.0.1:4601/ws/cartoongan");
 
         this.ws.onopen = () => {
