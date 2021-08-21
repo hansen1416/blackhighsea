@@ -16,6 +16,9 @@ RUN apt-get -y update \
 # RUN pip3 install asyncio websockets setuptools
 RUN pip3 install numpy tornado opencv-python
 
+RUN apt-get -y update && \
+    apt-get install -y python3-opencv
+
 EXPOSE 4601
 
 WORKDIR /app

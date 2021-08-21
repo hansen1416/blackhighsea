@@ -2,10 +2,13 @@
 import os.path
 import logging
 import re
-import csv
 import uuid
 import sys
+# import glob
+import socket
 
+import numpy as np
+import cv2
 import tornado.escape
 import tornado.ioloop
 import tornado.web
@@ -39,47 +42,27 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
     page_size = 100
 
     def __init__(self, application, request, **kwargs):
-        tornado.websocket.WebSocketHandler.__init__(self, application, request, **kwargs)
+        tornado.websocket.WebSocketHandler.__init__(self, \
+            application, request, **kwargs)
         self.rows = []
         self.uuid = None
 
     @classmethod
-    def send_message(self, doc_uuid, client):
-        clients_with_uuid = self.clients[doc_uuid]
+    def send_message(cls, doc_uuid, client, message):
+        clients_with_uuid = cls.clients[doc_uuid]
         logging.info("sending message to %d clients", len(clients_with_uuid))
 
-        message = self.make_message(doc_uuid)
+        # message = cls.make_message(doc_uuid)
         client.write_message(message)
 
     @classmethod
-    def make_message(self, doc_uuid):
-        rows = self.files[doc_uuid]["rows"]
-        page_no = self.files[doc_uuid]["page_no"]
-
-        return {
-            "uuid": doc_uuid,
-            "page_no": page_no,
-            "total_number": len(rows),
-            "data": rows[self.page_size * (page_no - 1):self.page_size * page_no]
-        }
-
-    @classmethod
-    def load_file(self, doc_uuid, tsv_file):
-        if not (bytes is str):
-            tsv_file = str(tsv_file, 'utf-8')
-        lines = ( x.strip() for x in tsv_file.splitlines() if x.strip() )
-        rows = list( csv.reader(lines, delimiter="\t") )
-
-        self.files[doc_uuid] = {"rows": rows, "page_no": 1}
-
-    @classmethod
     @tornado.gen.coroutine
-    def add_clients(self, doc_uuid, client):
+    def add_clients(cls, doc_uuid, client):
         logging.info("add a client with (uuid: %s)" % doc_uuid)
 
         # locking clients
         with (yield lock.acquire()):
-            if doc_uuid in self.clients:
+            if doc_uuid in cls.clients:
                 clients_with_uuid = CartoonGANHandler.clients[doc_uuid]
                 clients_with_uuid.append(client)
             else:
@@ -87,20 +70,38 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
 
     @classmethod
     @tornado.gen.coroutine
-    def remove_clients(self, doc_uuid, client):
+    def remove_clients(cls, doc_uuid, client):
         logging.info("remove a client with (uuid: %s)" % doc_uuid)
 
         # locking clients
         with (yield lock.acquire()):
-            if doc_uuid in self.clients:
+            if doc_uuid in cls.clients:
                 clients_with_uuid = CartoonGANHandler.clients[doc_uuid]
                 clients_with_uuid.remove(client)
 
                 if len(clients_with_uuid) == 0:
-                    del self.clients[doc_uuid]
+                    del cls.clients[doc_uuid]
 
-            if doc_uuid not in self.clients and doc_uuid in self.files:
-                del self.files[doc_uuid]
+            if doc_uuid not in cls.clients and doc_uuid in cls.files:
+                del cls.files[doc_uuid]
+
+    # @classmethod
+    # def create_video_from_image(cls):
+    #     img_array = []
+    #     for filename in glob.glob('C:/New folder/Images/*.jpg'):
+    #         img = cv2.imread(filename)
+    #         height, width, layers = img.shape
+    #         size = (width,height)
+    #         img_array.append(img)
+        
+        
+    #     out = cv2.VideoWriter('project.avi',cv2.VideoWriter_fourcc(*'DIVX'), 15, size)
+        
+    #     for i in range(len(img_array)):
+    #         out.write(img_array[i])
+
+    #     cv2.destroyAllWindows()        
+    #     out.release()
 
     def check_origin(self, origin):
         return options.debug or bool(re.match(r'^.*\catlog\.kr', origin))
@@ -110,6 +111,11 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
         return {}
 
     def open(self, doc_uuid=None):
+
+        # we will pass uuid in cookie
+        # print("received cookies: ", self.request.cookies)
+        # print("received 'myuser': ", self.get_cookie("myuser"))
+
         logging.info("open a websocket (uuid: %s)" % doc_uuid)
 
         if doc_uuid is None:
@@ -119,7 +125,7 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
             logging.info("new client with (uuid: %s)" % self.uuid)
         else:
             self.uuid = doc_uuid
-            CartoonGANHandler.send_message(self.uuid, self)
+            CartoonGANHandler.send_message(self.uuid, self, 'hi again')
 
             logging.info("new client sharing (uuid: %s)" % self.uuid)
 
@@ -130,18 +136,51 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
 
         CartoonGANHandler.remove_clients(self.uuid, self)
 
+    @classmethod
+    async def cartoongan(cls, input_image):
+
+        model_path = os.path.join('/sharedvol', 'gan-generator.pt')
+        # input_image = os.path.join('/sharedvol', 'test.jpg')
+        output_image = os.path.join('/sharedvol', 'test_out.jpg')
+
+        HOST, PORT = "cpp-stylize", 4602
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        s.connect((HOST, PORT))
+
+        send_msg = model_path + " " + input_image + " " + output_image
+
+        s.send(send_msg.encode('ascii'))
+
+        recv_msg = await str(s.recv(1024))
+
+        cls.send_message(recv_msg)
+
     def on_message(self, message):
-        logging.info("got message {} from uuid: {}".format(message, self.uuid))
+        logging.info("got message from uuid: {}".format(self.uuid))
 
         if isinstance(message, type(b'')):
-            logging.info(type(message))
 
-            # CartoonGANHandler.load_file(self.uuid, message)
-        # else:
-        #     logging.info("page_no: " + message)
+            imahe_name = os.path.join('/sharedvol', self.uuid + '.jpg')
 
-        #     page_no = int(message)
-        #     CartoonGANHandler.files[self.uuid]["page_no"] = page_no
+            # read image from string
+            nparr = np.fromstring(message, np.uint8)
+            img_np = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+            # logging.info(type(img_np))
+
+            cv2.imwrite(imahe_name, img_np)
+
+            logging.info('saved image to ' + imahe_name)
+
+            # The IOLoop will catch the exception and print a stack trace in
+            # the logs. Note that this doesn't look like a normal call, since
+            # we pass the function object to be called by the IOLoop.
+            tornado.ioloop.IOLoop.current().\
+                spawn_callback(self.cartoongan, imahe_name)
+
+
 
 if __name__ == "__main__":
     parse_command_line()

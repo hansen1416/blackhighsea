@@ -38,17 +38,17 @@ services:
     command: ["python3", "-u", "./wsserver.py"]
     # command: ["tail", "-f", "/dev/null"]
 
-  py-cartoongan:
-    networks:
-      - bhs
-    image: hansen1416/bhs-py-cartoongan
-    # environment:
-    #   - FLASK_ENV=development
-    ports:
-      - 65432:65432
-    volumes:
-      - ${PY_CARTOONGAN}:/app
-    command: ["python", "-u", "./app-server.py", "65432"]
+  # py-cartoongan:
+  #   networks:
+  #     - bhs
+  #   image: hansen1416/bhs-py-cartoongan
+  #   # environment:
+  #   #   - FLASK_ENV=development
+  #   ports:
+  #     - 65432:65432
+  #   volumes:
+  #     - ${PY_CARTOONGAN}:/app
+  #   command: ["python", "-u", "./app-server.py", "65432"]
   
 
   # py-selenium:
@@ -60,15 +60,15 @@ services:
   #   volumes:
   #     - ${PY_SELENIUM_SOURCE}:/app
 
-  # cpp-stylize:
-  #   networks:
-  #     - bhs
-  #   image: hansen1416/bhs-cpp-stylize
-  #   # ports:
-  #   #   - 4602:80
-  #   volumes:
-  #     - ${CPP_STYLIZE_OPT}:/opt
-  #     - ${SHARED_DATA}:/sharedvol # c++ executive, pre-trained model, input/output images
+  cpp-stylize:
+    networks:
+      - bhs
+    image: hansen1416/bhs-cpp-stylize
+    ports:
+      - 4602:80
+    volumes:
+      - ${CPP_STYLIZE_OPT}:/opt
+      - ${SHARED_DATA}:/sharedvol # c++ executive, pre-trained model, input/output images
 
 networks:
   bhs:
