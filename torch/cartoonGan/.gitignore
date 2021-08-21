@@ -3,3 +3,5 @@ model-trace/*
 *.pt
 input/*
 output/*
+docker/libtorch
+docker/opencv
