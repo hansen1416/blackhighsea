@@ -6,6 +6,7 @@ import uuid
 import sys
 # import glob
 import socket
+from time import time
 
 import asyncio
 import numpy as np
@@ -47,6 +48,7 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
             application, request, **kwargs)
         self.rows = []
         self.uuid = None
+        self.start_time = 0
 
     @classmethod
     def send_message(cls, doc_uuid, client, message):
@@ -142,15 +144,21 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
         s.send(send_msg.encode('ascii'))
 
         while True:
-            recv_msg = s.recv(1024)
+
+            recv_msg = await s.recv(1024)
 
             if type(recv_msg) == type(b''):
+                
+                # logging.info('new message {}'.format(recv_msg))
+
                 recv_msg = recv_msg.decode('ascii')
 
-                if recv_msg[-4] == '.jpg':
+                if recv_msg[-4:] == '.jpg':
                     cls.send_message(uuid, client, str(recv_msg))
 
                     logging.info('new picture {}'.format(recv_msg))
+
+                    break
 
     def on_message(self, message):
         logging.info("got message from uuid: {}".format(self.uuid))
@@ -173,7 +181,7 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
             # the logs. Note that this doesn't look like a normal call, since
             # we pass the function object to be called by the IOLoop.
             tornado.ioloop.IOLoop.current().\
-                spawn_callback(self.cartoongan, self.uuid, self, image_name)
+                spawn_callback(CartoonGANHandler.cartoongan, self.uuid, self, image_name)
 
             logging.info('on message finished')
 

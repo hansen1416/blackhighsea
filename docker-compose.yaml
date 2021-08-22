@@ -18,7 +18,7 @@ services:
       - bhs
     image: nginx:1.21.1-alpine
     ports:
-      - 4603:80
+      - 4602:80
     volumes:
       - ${SHARED_DATA}:/usr/share/nginx/html
 
@@ -74,8 +74,8 @@ services:
     networks:
       - bhs
     image: hansen1416/bhs-cpp-stylize
-    ports:
-      - 4602:8888
+    # ports:
+    #   - 4602:8888
     volumes:
       # - ${CPP_STYLIZE_OPT}:/opt
       - ${SHARED_DATA}:/sharedvol # c++ executive, pre-trained model, input/output images
