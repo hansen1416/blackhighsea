@@ -145,7 +145,7 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
 
         while True:
 
-            recv_msg = await s.recv(1024)
+            recv_msg = s.recv(1024)
 
             if type(recv_msg) == type(b''):
                 

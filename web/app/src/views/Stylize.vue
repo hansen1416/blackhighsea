@@ -1,13 +1,21 @@
 <template>
     <div>
-        <UploadImages :max="1" @upload="handleImage" @delete="deleteImage" />
-        <button @click="submitImage">submit</button>
+        <div>
+            <UploadImages :max="1" @upload="handleImage" @delete="deleteImage" />
+            <button @click="submitImage">submit</button>
+        </div>
+        <div>
+            <img 
+                v-if ="transferedImage"
+                :src="transferedImage" 
+            />
+        </div>
     </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import axios, { AxiosResponse } from "axios";
+// import axios, { AxiosResponse } from "axios";
 import UploadImages from "@/components/UploadImages.vue";
 
 export default defineComponent({
@@ -18,6 +26,7 @@ export default defineComponent({
         return {
             origin_image: (null as unknown) as Blob,
             ws: (null as unknown) as WebSocket,
+            transferedImage: '',
         };
     },
     created() {
@@ -29,8 +38,15 @@ export default defineComponent({
             console.log("ws Connected.");
         };
 
-        this.ws.onmessage = (event) => {
-            console.log(event);
+        this.ws.onmessage = (event: MessageEvent) => {
+            try {
+                
+                const image_name = event.data.split('/').pop();
+
+                this.transferedImage = 'http://localhost:4602/' + image_name;
+            } catch (error) {
+                console.error(error);
+            }
         };
 
         this.ws.onclose = () => {
@@ -46,11 +62,9 @@ export default defineComponent({
             console.info("deleted");
         },
         submitImage() {
-
-            this.origin_image.arrayBuffer()
-            .then(buffer => {
+            this.origin_image.arrayBuffer().then((buffer) => {
                 this.ws.send(buffer);
-            })
+            });
 
             return false;
 
