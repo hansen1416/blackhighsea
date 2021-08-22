@@ -131,7 +131,8 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
 
         model_path = os.path.join('/opt', 'gan-generator.pt')
         # input_image = os.path.join('/sharedvol', 'test.jpg')
-        output_image = os.path.join('/sharedvol', 'test_out.jpg')
+        output_image = os.path.join('/sharedvol', \
+            uuid + str(int(time())) + '_out.jpg')
 
         HOST, PORT = "cpp-stylize", 8888
 
@@ -147,6 +148,9 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
 
             recv_msg = s.recv(1024)
 
+            if not recv_msg:
+                break
+
             if type(recv_msg) == type(b''):
                 
                 # logging.info('new message {}'.format(recv_msg))
@@ -158,7 +162,11 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
 
                     logging.info('new picture {}'.format(recv_msg))
 
+                    s.close()
+
                     break
+
+        s.close()
 
     def on_message(self, message):
         logging.info("got message from uuid: {}".format(self.uuid))

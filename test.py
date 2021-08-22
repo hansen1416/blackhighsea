@@ -6,6 +6,6 @@ from time import sleep, time
 
 start_time = time()
 
-sleep(2)
+print(start_time)
 
 print(time() - start_time >= 2)

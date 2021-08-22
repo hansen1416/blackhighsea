@@ -39,11 +39,15 @@ export default defineComponent({
         };
 
         this.ws.onmessage = (event: MessageEvent) => {
+
             try {
                 
                 const image_name = event.data.split('/').pop();
 
                 this.transferedImage = 'http://localhost:4602/' + image_name;
+
+                console.log(this.transferedImage)
+
             } catch (error) {
                 console.error(error);
             }
