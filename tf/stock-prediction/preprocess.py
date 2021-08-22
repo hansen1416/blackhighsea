@@ -75,7 +75,6 @@ def lstm_preprocess_data(df, ticker, scaler_dir):
         x_train.append(x_train_scaled[i-50:i,:])
         y_train.append(y_train_scaled[i,:])
     
-    # forget to shift data
     x_train, y_train = np.array(x_train), np.array(y_train)
     # save scaler to file
     pickle.dump(sc_x, open(os.path.join(scaler_dir, 'x_scaler_' + ticker + '.pkl'), 'wb'))
@@ -96,5 +95,5 @@ if __name__ == "__main__":
 
     x, y = lstm_preprocess_data(df, ticker, SCALER_DIR)
 
-    print(x.shape, y.shape)
+    print(x, y)
     # (N, 50, 19) (N, 1)

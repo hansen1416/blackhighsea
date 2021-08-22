@@ -1,26 +1,34 @@
 version: "3.8"
 services:
 
-  web:
+  phaser:
     networks:
       - bhs
-    image: hansen1416/bhs-vue
+    image: hansen1416/bhs-phaser
     ports:
-      - 4600:8080
-    volumes:
-      - ${FRONTEND_SOURCE}:/app
-      - ${SHARED_DATA}:/app/public/img/sharedvol
-    working_dir: /app
-    command: ["npm", "run", "serve"]
+      - 46000:8080
+    command: ["tail", "-f", "/dev/null"]
 
-  nginx-static:
-    networks:
-      - bhs
-    image: nginx:1.21.1-alpine
-    ports:
-      - 4602:80
-    volumes:
-      - ${SHARED_DATA}:/usr/share/nginx/html
+  # web:
+  #   networks:
+  #     - bhs
+  #   image: hansen1416/bhs-vue
+  #   ports:
+  #     - 4600:8080
+  #   volumes:
+  #     - ${FRONTEND_SOURCE}:/app
+  #     - ${SHARED_DATA}:/app/public/img/sharedvol
+  #   working_dir: /app
+  #   command: ["npm", "run", "serve"]
+
+  # nginx-static:
+  #   networks:
+  #     - bhs
+  #   image: nginx:1.21.1-alpine
+  #   ports:
+  #     - 4602:80
+  #   volumes:
+  #     - ${SHARED_DATA}:/usr/share/nginx/html
 
 
   # py-api:
@@ -36,17 +44,17 @@ services:
   #     - ${SHARED_DATA}:/sharedvol # input/output images
   #   command: ["python", "-u", "./wsserver.py"]
 
-  py-websocket:
-    networks:
-      - bhs
-    image: hansen1416/bhs-py-websocket
-    ports:
-      - 4601:4601
-    volumes:
-      - ${PY_WEBSOCKET_SOURCE}:/app
-      - ${SHARED_DATA}:/sharedvol # input/output images
-    command: ["python3", "-u", "./wsserver.py"]
-    # command: ["tail", "-f", "/dev/null"]
+  # py-websocket:
+  #   networks:
+  #     - bhs
+  #   image: hansen1416/bhs-py-websocket
+  #   ports:
+  #     - 4601:4601
+  #   volumes:
+  #     - ${PY_WEBSOCKET_SOURCE}:/app
+  #     - ${SHARED_DATA}:/sharedvol # input/output images
+  #   command: ["python3", "-u", "./wsserver.py"]
+  #   # command: ["tail", "-f", "/dev/null"]
 
   # py-cartoongan:
   #   networks:
@@ -70,15 +78,15 @@ services:
   #   volumes:
   #     - ${PY_SELENIUM_SOURCE}:/app
 
-  cpp-stylize:
-    networks:
-      - bhs
-    image: hansen1416/bhs-cpp-stylize
-    # ports:
-    #   - 4602:8888
-    volumes:
-      # - ${CPP_STYLIZE_OPT}:/opt
-      - ${SHARED_DATA}:/sharedvol # c++ executive, pre-trained model, input/output images
+  # cpp-stylize:
+  #   networks:
+  #     - bhs
+  #   image: hansen1416/bhs-cpp-stylize
+  #   # ports:
+  #   #   - 4602:8888
+  #   volumes:
+  #     # - ${CPP_STYLIZE_OPT}:/opt
+  #     - ${SHARED_DATA}:/sharedvol # c++ executive, pre-trained model, input/output images
 
 networks:
   bhs:
