@@ -127,7 +127,7 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
 
         logging.info('start cartoon gan')
 
-        model_path = os.path.join('/sharedvol', 'gan-generator.pt')
+        model_path = os.path.join('/opt', 'gan-generator.pt')
         # input_image = os.path.join('/sharedvol', 'test.jpg')
         output_image = os.path.join('/sharedvol', 'test_out.jpg')
 
@@ -141,16 +141,16 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
 
         s.send(send_msg.encode('ascii'))
 
-        # while True:
-        recv_msg = s.recv(1024)
-        # identity, msg = await s.recv_multipart()
-        # asyncio.ensure_future(s.send_multipart([identity, msg]))
+        while True:
+            recv_msg = s.recv(1024)
 
-        if type(recv_msg) == type(b''):
+            if type(recv_msg) == type(b''):
+                recv_msg = recv_msg.decode('ascii')
 
-            cls.send_message(uuid, client, str(recv_msg))
+                if recv_msg[-4] == '.jpg':
+                    cls.send_message(uuid, client, str(recv_msg))
 
-            logging.info('send message back to '+ uuid)
+                    logging.info('new picture {}'.format(recv_msg))
 
     def on_message(self, message):
         logging.info("got message from uuid: {}".format(self.uuid))
