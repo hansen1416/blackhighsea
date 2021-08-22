@@ -46,7 +46,7 @@ int main(int argc, const char *argv[])
     fd_set readfds;  
          
     //a message 
-    char const *message = "ECHO Daemon v1.0 \r\n";  
+    char const *message = "greeting";  
      
     //initialise all client_socket[] to 0 so not checked 
     for (i = 0; i < max_clients; i++)  

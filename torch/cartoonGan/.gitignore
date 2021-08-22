@@ -3,5 +3,6 @@ model-trace/*
 *.pt
 input/*
 output/*
-docker/libtorch
+docker/libtorch*
 docker/opencv
+docker/cartoonGan
