@@ -179,7 +179,23 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
             nparr = np.fromstring(message, np.uint8)
             img_np = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-            # logging.info(type(img_np))
+            # resize image if either weight or height is more than 600
+            # if the size is too big, it will crush the pytorch model
+            max_size = 600
+            scale_percent = 0
+
+            if img_np.shape[1] > max_size:
+                scale_percent = max_size / img_np.shape[1]
+            elif img_np.shape[0] > max_size:
+                scale_percent = max_size / img_np.shape[0]
+
+            dim = (int(img_np.shape[1] * scale_percent), \
+                int(img_np.shape[0] * scale_percent))
+
+            if scale_percent != 0:
+                logging.info('resized to {} x {}'.format(dim[0], dim[1]))
+
+                img_np = cv2.resize(img_np, dim, interpolation = cv2.INTER_AREA)
 
             cv2.imwrite(image_name, img_np)
 
