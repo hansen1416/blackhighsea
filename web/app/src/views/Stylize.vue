@@ -7,7 +7,7 @@
         <div>
             <img 
                 v-if ="transferedImage"
-                :src="transferedImage" 
+                :src="transferedImage"
             />
         </div>
     </div>

@@ -4,9 +4,11 @@ import logging
 import re
 import uuid
 import sys
+
 # import glob
 import socket
 from time import time
+import datetime
 
 import asyncio
 import numpy as np
@@ -27,7 +29,7 @@ lock = tornado.locks.Lock()
 
 log_format = "%(levelname)s %(asctime)s - %(message)s"
 
-logging.basicConfig(stream = sys.stdout, format = log_format, level = logging.INFO)
+logging.basicConfig(stream=sys.stdout, format=log_format, level=logging.INFO)
 logger = logging.getLogger()
 
 
@@ -44,8 +46,9 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
     page_size = 100
 
     def __init__(self, application, request, **kwargs):
-        tornado.websocket.WebSocketHandler.__init__(self, \
-            application, request, **kwargs)
+        tornado.websocket.WebSocketHandler.__init__(
+            self, application, request, **kwargs
+        )
         self.rows = []
         self.uuid = None
         self.start_time = 0
@@ -92,7 +95,7 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
                 del cls.files[doc_uuid]
 
     def check_origin(self, origin):
-        return options.debug or bool(re.match(r'^.*\catlog\.kr', origin))
+        return options.debug or bool(re.match(r"^.*\catlog\.kr", origin))
 
     def get_compression_options(self):
         # Non-None enables compression with default options.
@@ -113,7 +116,7 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
             logging.info("new client with (uuid: %s)" % self.uuid)
         else:
             self.uuid = doc_uuid
-            CartoonGANHandler.send_message(self.uuid, self, 'hi again')
+            CartoonGANHandler.send_message(self.uuid, self, "hi again")
 
             logging.info("new client sharing (uuid: %s)" % self.uuid)
 
@@ -124,56 +127,58 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
 
         CartoonGANHandler.remove_clients(self.uuid, self)
 
+    # @tornado.gen.coroutine
     @classmethod
-    async def cartoongan(cls, uuid, client, input_image):
+    def cartoongan(cls, uuid, client, input_image):
 
-        logging.info('start cartoon gan')
+        logging.info("start cartoon gan")
 
-        model_path = os.path.join('/opt', 'gan-generator.pt')
+        model_path = os.path.join("/opt", "gan-generator.pt")
         # input_image = os.path.join('/sharedvol', 'test.jpg')
-        output_image = os.path.join('/sharedvol', \
-            uuid + str(int(time())) + '_out.jpg')
+        output_image = os.path.join("/sharedvol", uuid + str(int(time())) + "_out.jpg")
 
         HOST, PORT = "cpp-stylize", 8888
 
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 
-        s.connect((HOST, PORT))
+            s.connect((HOST, PORT))
 
-        send_msg = model_path + " " + input_image + " " + output_image
+            send_msg = model_path + " " + input_image + " " + output_image
 
-        s.send(send_msg.encode('ascii'))
+            s.send(send_msg.encode("ascii"))
 
-        while True:
+            while True:
 
-            recv_msg = s.recv(1024)
+                recv_msg = s.recv(1024)
 
-            if not recv_msg:
-                break
+                # logging.info(time())
 
-            if type(recv_msg) == type(b''):
-                
-                # logging.info('new message {}'.format(recv_msg))
-
-                recv_msg = recv_msg.decode('ascii')
-
-                if recv_msg[-4:] == '.jpg':
-                    cls.send_message(uuid, client, str(recv_msg))
-
-                    logging.info('new picture {}'.format(recv_msg))
-
-                    s.close()
-
+                if not recv_msg:
                     break
 
-        s.close()
+                if type(recv_msg) == type(b""):
+
+                    # logging.info('new message {}'.format(recv_msg))
+
+                    recv_msg = recv_msg.decode("ascii")
+
+                    if recv_msg[-4:] == ".jpg":
+                        cls.send_message(uuid, client, str(recv_msg))
+
+                        logging.info("new picture {}".format(recv_msg))
+
+                        s.close()
+
+                        break
+
+                
 
     def on_message(self, message):
         logging.info("got message from uuid: {}".format(self.uuid))
 
-        if isinstance(message, type(b'')):
+        if isinstance(message, type(b"")):
 
-            image_name = os.path.join('/sharedvol', self.uuid + '.jpg')
+            image_name = os.path.join("/sharedvol", self.uuid + ".jpg")
 
             # read image from string
             nparr = np.fromstring(message, np.uint8)
@@ -189,25 +194,30 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
             elif img_np.shape[0] > max_size:
                 scale_percent = max_size / img_np.shape[0]
 
-            dim = (int(img_np.shape[1] * scale_percent), \
-                int(img_np.shape[0] * scale_percent))
+            dim = (
+                int(img_np.shape[1] * scale_percent),
+                int(img_np.shape[0] * scale_percent),
+            )
 
             if scale_percent != 0:
-                logging.info('resized to {} x {}'.format(dim[0], dim[1]))
+                logging.info("resized to {} x {}".format(dim[0], dim[1]))
 
-                img_np = cv2.resize(img_np, dim, interpolation = cv2.INTER_AREA)
+                img_np = cv2.resize(img_np, dim, interpolation=cv2.INTER_AREA)
 
             cv2.imwrite(image_name, img_np)
 
-            logging.info('saved image to ' + image_name)
+            logging.info("saved image to " + image_name)
 
             # The IOLoop will catch the exception and print a stack trace in
             # the logs. Note that this doesn't look like a normal call, since
             # we pass the function object to be called by the IOLoop.
-            tornado.ioloop.IOLoop.current().\
-                spawn_callback(CartoonGANHandler.cartoongan, self.uuid, self, image_name)
+            # tornado.ioloop.IOLoop.current().spawn_callback(
+            #     CartoonGANHandler.cartoongan, self.uuid, self, image_name
+            # )
 
-            logging.info('on message finished')
+            CartoonGANHandler.cartoongan(self.uuid, self, image_name)
+
+            logging.info("on message finished")
 
     # @classmethod
     # def create_video_from_image(cls):
@@ -217,33 +227,32 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
     #         height, width, layers = img.shape
     #         size = (width,height)
     #         img_array.append(img)
-        
-        
+
     #     out = cv2.VideoWriter('project.avi',cv2.VideoWriter_fourcc(*'DIVX'), 15, size)
-        
+
     #     for i in range(len(img_array)):
     #         out.write(img_array[i])
 
-    #     cv2.destroyAllWindows()        
+    #     cv2.destroyAllWindows()
     #     out.release()
 
 
 if __name__ == "__main__":
     parse_command_line()
     settings = dict(
-            cookie_secret="SX4gEWPE6bVr0vbwGtMl",
-            # template_path=os.path.join(os.path.dirname(__file__), "templates"),
-            # static_path=os.path.join(os.path.dirname(__file__), "static"),
-            xsrf_cookies=True,
-            debug=options.debug
+        cookie_secret="SX4gEWPE6bVr0vbwGtMl",
+        # template_path=os.path.join(os.path.dirname(__file__), "templates"),
+        # static_path=os.path.join(os.path.dirname(__file__), "static"),
+        xsrf_cookies=True,
+        debug=options.debug,
     )
 
     handlers = [
-            (r"/", MainHandler),
-            (r"/ws/cartoongan", CartoonGANHandler),
-            # (r"/parser/ws", CartoonGANHandler),
-            # (r"/parser/ws/([^/]+)", CartoonGANHandler),
-            # (r"/parser/static/(.*)", tornado.web.StaticCartoonGANHandler, {"path": settings["static_path"]})
+        (r"/", MainHandler),
+        (r"/ws/cartoongan", CartoonGANHandler),
+        # (r"/parser/ws", CartoonGANHandler),
+        # (r"/parser/ws/([^/]+)", CartoonGANHandler),
+        # (r"/parser/static/(.*)", tornado.web.StaticCartoonGANHandler, {"path": settings["static_path"]})
     ]
 
     app = tornado.web.Application(handlers, **settings)

@@ -16,7 +16,7 @@
             <input
                 type="file"
                 style="z-index: 1"
-                accept="image/*"
+                accept="image/*, video/*"
                 ref="uploadInput"
                 @change="previewImgs"
                 multiple
@@ -148,6 +148,31 @@
                 <!-- <div class="plus" @click="append" v-if="++i == Imgs.length">+</div> -->
             </div>
         </div>
+        <div class="imgsPreview" v-show="Videos.length > 0">
+            <button class="clearButton" @click="reset">
+                {{ clearAll ? clearAll : "clear All" }}
+            </button>
+            <div class="imageHolder" v-for="(video, i) in Videos" :key="i">
+                <video :src="video" width="" height="" controls></video>
+                <span class="delete" style="color: white" @click="deleteImg(--i)">
+                    <svg
+                        class="icon"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                    </svg>
+                </span>
+                <!-- <div class="plus" @click="append" v-if="++i == Imgs.length">+</div> -->
+            </div>
+        </div>
     </div>
 </template>
 
@@ -162,6 +187,7 @@ export default defineComponent({
             files: [],
             dropped: 0,
             Imgs: [],
+            Videos: [],
         };
     },
     props: {
@@ -247,7 +273,14 @@ export default defineComponent({
                 readers.push(this.readAsDataURL(this.files[i]));
             }
             Promise.all(readers).then((values) => {
-                this.Imgs = values;
+
+                const mime = values[0].substring(0,10); 
+
+                if (mime == 'data:video') {
+                    this.Videos = values;
+                } else {
+                    this.Imgs = values;
+                }
             });
         },
         reset() {
