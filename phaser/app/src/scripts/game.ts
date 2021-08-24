@@ -75,16 +75,29 @@ async function main() {
 
     const video = document.querySelector("#videoElement") as HTMLVideoElement;
 
+    const idleTime = 30;
+    const moveingThreshold = 5;
+    let stopWatch = 0;
+    let prevPos = [0, 0];
+
     function runDetection() {
         model.detect(video).then((predictions: Prediction[]) => {
             if (predictions.length) {
                 for (const pred of predictions) {
                     if (handLabel.indexOf(pred.label) != -1) {
-                        console.log(
-                            video.videoWidth,
-                            video.videoHeight,
-                            pred.bbox
-                        );
+                        const distance = [
+                            pred.bbox[0] - prevPos[0],
+                            pred.bbox[1] - prevPos[1],
+                        ];
+
+                        if (
+                            Math.abs(distance[0]) > moveingThreshold ||
+                            Math.abs(distance[1]) > moveingThreshold
+                        ) {
+                            console.log(distance);
+                        }
+
+                        prevPos = [pred.bbox[0], pred.bbox[1]];
                     }
                 }
             }
