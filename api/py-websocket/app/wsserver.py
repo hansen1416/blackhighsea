@@ -1,9 +1,14 @@
 #!/usr/bin/env python
+from os import removedirs
 import os.path
 import logging
 import re
 import uuid
 import sys
+from io import BytesIO
+import inspect
+import json
+from collections import deque
 
 # import glob
 import socket
@@ -52,6 +57,7 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
         self.rows = []
         self.uuid = None
         self.start_time = 0
+        self.message_queue = deque([], 2)
 
     @classmethod
     def send_message(cls, doc_uuid, client, message):
@@ -129,7 +135,7 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
 
     # @tornado.gen.coroutine
     @classmethod
-    def cartoongan(cls, uuid, client, input_image):
+    def cartoongan_image(cls, uuid, client, input_image):
 
         logging.info("start cartoon gan")
 
@@ -170,14 +176,84 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
                         s.close()
 
                         break
+    @classmethod
+    def cartoongan_video(cls, uuid, client, video_bytesio):
+        video_filename = '/sharedvol/test1.mp4'
 
-                
+        with open(video_filename, "wb") as outfile:
+            # Copy the BytesIO stream to the output file
+            outfile.write(video_bytesio.getbuffer())
+
+        logging.info('video saved to %s' % video_filename)
+
+        cap = cv2.VideoCapture(video_filename)
+
+        fps = cap.get(cv2.CAP_PROP_FPS)
+
+        logging.info('fps %d' % fps)
+
+        n = 0
+
+        while(cap.isOpened()):
+
+            # Capture frame-by-frame
+
+            success, frame = cap.read()
+
+            if success == True:
+                # Display the resulting frame
+                logging.info(str(n))
+
+                n+=1
+            else:
+                break
+
+        # When everything done, release the video capture object
+        cap.release()
+
+        # Closes all the frames
+        cv2.destroyAllWindows()
+
+        HOST, PORT = "cpp-stylize", 8888
+
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+
+            s.connect((HOST, PORT))
+
+            # send_msg = model_path + " " + input_image + " " + output_image
+
+            # s.send(send_msg.encode("ascii"))
+
+            while True:
+                s.settimeout(5)
+                try:
+                    recv_msg = s.recv(1024)
+                except socket.timeout:
+                    logging.info('socket timeout')
+                    break
+
 
     def on_message(self, message):
         logging.info("got message from uuid: {}".format(self.uuid))
 
-        if isinstance(message, type(b"")):
+        # with BytesIO(message ) as f:
+        #     file_data = f.read()
+        #     logging.info(file_data.name)
 
+
+        # res = inspect.getmembers(f, lambda a:not(inspect.isroutine(a)))
+
+        if type(message) == type(''):
+            self.message_queue.append(message)
+        
+        if len(self.message_queue) <= 0 or not isinstance(message, type(b"")):
+            return
+            
+        if self.message_queue[-1] == 'image':
+            nparr = np.fromstring(message, np.uint8)
+
+            logging.info(nparr)
+        
             image_name = os.path.join("/sharedvol", self.uuid + ".jpg")
 
             # read image from string
@@ -211,13 +287,28 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
             # The IOLoop will catch the exception and print a stack trace in
             # the logs. Note that this doesn't look like a normal call, since
             # we pass the function object to be called by the IOLoop.
-            # tornado.ioloop.IOLoop.current().spawn_callback(
-            #     CartoonGANHandler.cartoongan, self.uuid, self, image_name
-            # )
+            tornado.ioloop.IOLoop.current().spawn_callback(
+                CartoonGANHandler.cartoongan_image, self.uuid, self, image_name
+            )
 
-            CartoonGANHandler.cartoongan(self.uuid, self, image_name)
+            # CartoonGANHandler.cartoongan(self.uuid, self, image_name)
 
-            logging.info("on message finished")
+            logging.info("on image message finished")
+        elif self.message_queue[-1] == 'video':
+
+            logging.info('process video')
+
+            bytesio = BytesIO(message)
+
+            # The IOLoop will catch the exception and print a stack trace in
+            # the logs. Note that this doesn't look like a normal call, since
+            # we pass the function object to be called by the IOLoop.
+            tornado.ioloop.IOLoop.current().spawn_callback(
+                CartoonGANHandler.cartoongan_video, self.uuid, self, bytesio
+            )
+
+            logging.info("on video message finished")
+
 
     # @classmethod
     # def create_video_from_image(cls):

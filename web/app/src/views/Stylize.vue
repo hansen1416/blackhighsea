@@ -5,10 +5,7 @@
             <button @click="submitImage">submit</button>
         </div>
         <div>
-            <img 
-                v-if ="transferedImage"
-                :src="transferedImage"
-            />
+            <img v-if="transferedImage" :src="transferedImage" />
         </div>
     </div>
 </template>
@@ -26,7 +23,7 @@ export default defineComponent({
         return {
             origin_image: (null as unknown) as Blob,
             ws: (null as unknown) as WebSocket,
-            transferedImage: '',
+            transferedImage: "",
         };
     },
     created() {
@@ -39,15 +36,12 @@ export default defineComponent({
         };
 
         this.ws.onmessage = (event: MessageEvent) => {
-
             try {
-                
-                const image_name = event.data.split('/').pop();
+                const image_name = event.data.split("/").pop();
 
-                this.transferedImage = 'http://localhost:4602/' + image_name;
+                this.transferedImage = "http://localhost:4602/" + image_name;
 
-                console.log(this.transferedImage)
-
+                console.log(this.transferedImage);
             } catch (error) {
                 console.error(error);
             }
@@ -66,41 +60,27 @@ export default defineComponent({
             console.info("deleted");
         },
         submitImage() {
-            this.origin_image.arrayBuffer().then((buffer) => {
-                this.ws.send(buffer);
-            });
+            if (!this.origin_image) {
+                return false;
+            }
+
+            if (this.origin_image.type.substring(0, 5) == "image") {
+                this.ws.send("image");
+
+                this.origin_image.arrayBuffer().then((buffer: ArrayBuffer) => {
+                    this.ws.send(buffer);
+                });
+            }
+
+            if (this.origin_image.type.substring(0, 5) == "video") {
+                this.ws.send("video");
+
+                this.origin_image.arrayBuffer().then((buffer: ArrayBuffer) => {
+                    this.ws.send(buffer);
+                });
+            }
 
             return false;
-
-            // console.log(this.origin_image instanceof Blob);
-
-            // const reader = new FileReader();
-            // let rawData = new ArrayBuffer();
-
-            // reader.onload = function(evt) {
-            //     rawData = evt.target.result;
-
-            //     console.log(rawData);
-
-            //     // ws.send(rawData);
-            // }
-
-            // reader.readAsArrayBuffer(this.origin_image);
-
-            // const data = new FormData();
-
-            // this.ws.send({file: this.origin_image});
-
-            // data.append("origin_image", this.origin_image);
-
-            // axios
-            //     .post("http://localhost:4601/stylize", data)
-            //     .then(function (response: AxiosResponse) {
-            //         console.log(response);
-            //     })
-            //     .catch(function (error: any) {
-            //         console.log(error);
-            //     });
         },
     },
 });
