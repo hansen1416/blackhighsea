@@ -189,13 +189,13 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
 
         logging.info("video saved to %s" % video_filename)
 
+        cap = cv2.VideoCapture(video_filename)
+
+        fps = cap.get(cv2.CAP_PROP_FPS)
+
+        logging.info("fps %d" % fps)
+
         ###########
-        # cap = cv2.VideoCapture(video_filename)
-
-        # # fps = cap.get(cv2.CAP_PROP_FPS)
-
-        # # logging.info("fps %d" % fps)
-
         # n = 0
         # frame_images = []
 
@@ -206,7 +206,10 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
 
         #     if success == True:
         #         # Display the resulting frame
-        #         image_name = '/sharedvol/{}_{}.jpg'.format(uuid, n)
+        #         image_name = "/sharedvol/{}_{}.jpg".format(uuid, n)
+
+        #         frame = CartoonGANHandler.resize_image(frame)
+
         #         cv2.imwrite(image_name, frame)
         #         frame_images.append(image_name)
 
@@ -234,7 +237,9 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
 
         #     for i, frame in enumerate(frame_images):
 
-        #         output_image = os.path.join("/sharedvol", "{}_{}_out.jpg".format(uuid, i))
+        #         output_image = os.path.join(
+        #             "/sharedvol", "{}_{}_out.jpg".format(uuid, i)
+        #         )
 
         #         send_msg = model_path + " " + frame + " " + output_image
 
@@ -245,7 +250,8 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
         #         try:
         #             recv_msg = s.recv(1024)
 
-        #             transferred_frame.append(recv_msg)
+        #             if os.path.isfile(recv_msg):
+        #                 transferred_frame.append(recv_msg)
 
         #             logging.info("frame transferred saved to %s" % recv_msg)
         #         except socket.timeout:
@@ -254,13 +260,11 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
         ###########
 
         transferred_frame = []
-        tmp_uuid = "adf30332-e84c-4cb1-9571-098b53f7a40a"
 
-        for i in range(2, 48):
-            outimages = "/sharedvol/{}_{}_out.jpg".format(tmp_uuid, i)
+        for i in range(0,410):
+            o_i = '/sharedvol/27c7a16c-55bd-46b0-903a-3333a754e872_{}_out.jpg'.format(i)
 
-            # logging.info(os.path.isfile(outimages))
-            transferred_frame.append(outimages)
+            transferred_frame.append(o_i)
 
         frame_data_array = []
 
@@ -270,12 +274,15 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
             size = (width, height)
             frame_data_array.append(img)
 
-        out_video_path = "/sharedvol/{}_video_out.avi".format(tmp_uuid)
+        # out_video_path = "/sharedvol/adf30332-e84c-4cb1-9571-098b53f7a40a_video_out.avi"
+        out_video_path = "/sharedvol/{}_video_out.avi".format(uuid)
 
+        # filename, encoder, fps, framesize, [isColor]
         out_video = cv2.VideoWriter(
             out_video_path,
-            cv2.VideoWriter_fourcc(*"DIVX"),
-            15,
+            # cv2.VideoWriter_fourcc(*"DIVX"),
+            cv2.VideoWriter_fourcc(*"XVID"),
+            fps,
             size,
         )
 
@@ -288,6 +295,30 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
         cls.send_message(uuid, client, json.dumps({"video": out_video_path}))
 
         logging.info("send out video path %s" % out_video_path)
+
+    @classmethod
+    def resize_image(cls, img_np):
+        # resize image if either weight or height is more than 600
+        # if the size is too big, it will crush the pytorch model
+        max_size = 600
+        scale_percent = 0
+
+        if img_np.shape[1] > img_np.shape[0] and img_np.shape[1] > max_size:
+            scale_percent = max_size / img_np.shape[1]
+        elif img_np.shape[0] > img_np.shape[1] and img_np.shape[0] > max_size:
+            scale_percent = max_size / img_np.shape[0]
+
+        dim = (
+            int(img_np.shape[1] * scale_percent),
+            int(img_np.shape[0] * scale_percent),
+        )
+
+        if scale_percent != 0:
+            logging.info("resized to {} x {}".format(dim[0], dim[1]))
+
+            img_np = cv2.resize(img_np, dim, interpolation=cv2.INTER_AREA)
+
+        return img_np
 
     def on_message(self, message):
         logging.info("got message from uuid: {}".format(self.uuid))
@@ -315,25 +346,7 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
             nparr = np.fromstring(message, np.uint8)
             img_np = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-            # resize image if either weight or height is more than 600
-            # if the size is too big, it will crush the pytorch model
-            max_size = 600
-            scale_percent = 0
-
-            if img_np.shape[1] > max_size:
-                scale_percent = max_size / img_np.shape[1]
-            elif img_np.shape[0] > max_size:
-                scale_percent = max_size / img_np.shape[0]
-
-            dim = (
-                int(img_np.shape[1] * scale_percent),
-                int(img_np.shape[0] * scale_percent),
-            )
-
-            if scale_percent != 0:
-                logging.info("resized to {} x {}".format(dim[0], dim[1]))
-
-                img_np = cv2.resize(img_np, dim, interpolation=cv2.INTER_AREA)
+            img_np = CartoonGANHandler.resize_image(img_np)
 
             cv2.imwrite(image_name, img_np)
 

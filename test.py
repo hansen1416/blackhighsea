@@ -1,11 +1,27 @@
-from time import sleep, time
+import smtplib
+import email.utils
+from email.mime.text import MIMEText
 
-# a = b'/sharedvol/test_out.jpg'.decode('ascii')
+# Create the message
+msg = MIMEText("This is the body of the message.")
+msg["To"] = email.utils.formataddr(("Recipient", "hansen1416@163.com"))
+msg["From"] = email.utils.formataddr(("Author", "hansen1417@163.com"))
+msg["Subject"] = "Simple test message"
 
-# print(a[-4:])
+server = smtplib.SMTP()
 
-start_time = time()
+server.set_debuglevel(True)  # show communication with the server
 
-print(start_time)
+server.connect("smtp-relay.sendinblue.com", 587)
 
-print(time() - start_time >= 2)
+username = 'badapplesweetie@gmail.com'
+password = ''
+
+server.login(username, password)
+
+try:
+    server.sendmail(
+        "hansen1417@163.com", ["hansen1416@163.com"], msg.as_string()
+    )
+finally:
+    server.quit()
