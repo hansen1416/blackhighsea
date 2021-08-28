@@ -235,13 +235,13 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
         #     for i, frame in enumerate(frame_images):
 
         #         output_image = os.path.join("/sharedvol", "{}_{}_out.jpg".format(uuid, i))
-                
+
         #         send_msg = model_path + " " + frame + " " + output_image
 
         #         s.send(send_msg.encode("ascii"))
 
         #         s.settimeout(10)
-                
+
         #         try:
         #             recv_msg = s.recv(1024)
 
@@ -252,12 +252,42 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
         #             logging.info("socket timeout")
         #             break
         ###########
+
+        transferred_frame = []
+        tmp_uuid = "adf30332-e84c-4cb1-9571-098b53f7a40a"
+
         for i in range(2, 48):
-            outimages = '/sharedvol/adf30332-e84c-4cb1-9571-098b53f7a40a_{}_out.jpg'.format(i)
+            outimages = "/sharedvol/{}_{}_out.jpg".format(tmp_uuid, i)
 
             # logging.info(os.path.isfile(outimages))
+            transferred_frame.append(outimages)
 
+        frame_data_array = []
 
+        for filename in transferred_frame:
+            img = cv2.imread(filename)
+            height, width, _ = img.shape
+            size = (width, height)
+            frame_data_array.append(img)
+
+        out_video_path = "/sharedvol/{}_video_out.avi".format(tmp_uuid)
+
+        out_video = cv2.VideoWriter(
+            out_video_path,
+            cv2.VideoWriter_fourcc(*"DIVX"),
+            15,
+            size,
+        )
+
+        for frame in frame_data_array:
+            out_video.write(frame)
+
+        cv2.destroyAllWindows()
+        out_video.release()
+
+        cls.send_message(uuid, client, json.dumps({"video": out_video_path}))
+
+        logging.info("send out video path %s" % out_video_path)
 
     def on_message(self, message):
         logging.info("got message from uuid: {}".format(self.uuid))

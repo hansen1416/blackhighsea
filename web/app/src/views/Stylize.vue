@@ -6,6 +6,7 @@
         </div>
         <div>
             <img v-if="transferedImage" :src="transferedImage" />
+            <video v-if="transferedVideo" :src="transferedVideo" width="" height="" controls></video>
         </div>
     </div>
 </template>
@@ -24,6 +25,7 @@ export default defineComponent({
             origin_image: (null as unknown) as Blob,
             ws: (null as unknown) as WebSocket,
             transferedImage: "",
+            transferedVideo: "",
         };
     },
     created() {
@@ -45,6 +47,12 @@ export default defineComponent({
                     this.transferedImage = "http://localhost:4602/" + image_name;
 
                     console.log(this.transferedImage);
+                }else if (data.video) {
+                    const video_name = data.video.split("/").pop();
+
+                    this.transferedVideo = "http://localhost:4602/" + video_name;
+
+                    console.log(this.transferedVideo);
                 }
             } catch (error) {
                 console.error(error);
