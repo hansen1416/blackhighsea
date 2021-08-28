@@ -154,12 +154,12 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
             s.send(send_msg.encode("ascii"))
 
             while True:
-
-                recv_msg = s.recv(1024)
-
-                # logging.info(time())
-
-                if not recv_msg:
+                # timeout for transfer a image is 10 seconds
+                s.settimeout(10)
+                try:
+                    recv_msg = s.recv(1024)
+                except socket.timeout:
+                    cls.send_message(uuid, client, "socket timeout")
                     break
 
                 if type(recv_msg) == type(b""):
@@ -169,68 +169,94 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
                     recv_msg = recv_msg.decode("ascii")
 
                     if recv_msg[-4:] == ".jpg":
-                        cls.send_message(uuid, client, str(recv_msg))
+                        cls.send_message(uuid, client, json.dumps({"image": recv_msg}))
 
                         logging.info("new picture {}".format(recv_msg))
 
                         s.close()
 
                         break
+                else:
+                    break
+
     @classmethod
     def cartoongan_video(cls, uuid, client, video_bytesio):
-        video_filename = '/sharedvol/test1.mp4'
+        video_filename = "/sharedvol/test1.mp4"
 
         with open(video_filename, "wb") as outfile:
             # Copy the BytesIO stream to the output file
             outfile.write(video_bytesio.getbuffer())
 
-        logging.info('video saved to %s' % video_filename)
+        logging.info("video saved to %s" % video_filename)
 
-        cap = cv2.VideoCapture(video_filename)
+        ###########
+        # cap = cv2.VideoCapture(video_filename)
 
-        fps = cap.get(cv2.CAP_PROP_FPS)
+        # # fps = cap.get(cv2.CAP_PROP_FPS)
 
-        logging.info('fps %d' % fps)
+        # # logging.info("fps %d" % fps)
 
-        n = 0
+        # n = 0
+        # frame_images = []
 
-        while(cap.isOpened()):
+        # while cap.isOpened():
 
-            # Capture frame-by-frame
+        #     # Capture frame-by-frame
+        #     success, frame = cap.read()
 
-            success, frame = cap.read()
+        #     if success == True:
+        #         # Display the resulting frame
+        #         image_name = '/sharedvol/{}_{}.jpg'.format(uuid, n)
+        #         cv2.imwrite(image_name, frame)
+        #         frame_images.append(image_name)
 
-            if success == True:
-                # Display the resulting frame
-                logging.info(str(n))
+        #         logging.info("frame image saved to %s" % image_name)
 
-                n+=1
-            else:
-                break
+        #         n += 1
+        #     else:
+        #         break
 
-        # When everything done, release the video capture object
-        cap.release()
+        # # When everything done, release the video capture object
+        # cap.release()
 
-        # Closes all the frames
-        cv2.destroyAllWindows()
+        # # Closes all the frames
+        # cv2.destroyAllWindows()
 
-        HOST, PORT = "cpp-stylize", 8888
+        # model_path = os.path.join("/opt", "gan-generator.pt")
 
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        # HOST, PORT = "cpp-stylize", 8888
 
-            s.connect((HOST, PORT))
+        # transferred_frame = []
 
-            # send_msg = model_path + " " + input_image + " " + output_image
+        # with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 
-            # s.send(send_msg.encode("ascii"))
+        #     s.connect((HOST, PORT))
 
-            while True:
-                s.settimeout(5)
-                try:
-                    recv_msg = s.recv(1024)
-                except socket.timeout:
-                    logging.info('socket timeout')
-                    break
+        #     for i, frame in enumerate(frame_images):
+
+        #         output_image = os.path.join("/sharedvol", "{}_{}_out.jpg".format(uuid, i))
+                
+        #         send_msg = model_path + " " + frame + " " + output_image
+
+        #         s.send(send_msg.encode("ascii"))
+
+        #         s.settimeout(10)
+                
+        #         try:
+        #             recv_msg = s.recv(1024)
+
+        #             transferred_frame.append(recv_msg)
+
+        #             logging.info("frame transferred saved to %s" % recv_msg)
+        #         except socket.timeout:
+        #             logging.info("socket timeout")
+        #             break
+        ###########
+        for i in range(2, 48):
+            outimages = '/sharedvol/adf30332-e84c-4cb1-9571-098b53f7a40a_{}_out.jpg'.format(i)
+
+            # logging.info(os.path.isfile(outimages))
+
 
 
     def on_message(self, message):
@@ -240,20 +266,19 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
         #     file_data = f.read()
         #     logging.info(file_data.name)
 
-
         # res = inspect.getmembers(f, lambda a:not(inspect.isroutine(a)))
 
-        if type(message) == type(''):
+        if type(message) == type(""):
             self.message_queue.append(message)
-        
+
         if len(self.message_queue) <= 0 or not isinstance(message, type(b"")):
             return
-            
-        if self.message_queue[-1] == 'image':
+
+        if self.message_queue[-1] == "image":
             nparr = np.fromstring(message, np.uint8)
 
             logging.info(nparr)
-        
+
             image_name = os.path.join("/sharedvol", self.uuid + ".jpg")
 
             # read image from string
@@ -294,9 +319,9 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
             # CartoonGANHandler.cartoongan(self.uuid, self, image_name)
 
             logging.info("on image message finished")
-        elif self.message_queue[-1] == 'video':
+        elif self.message_queue[-1] == "video":
 
-            logging.info('process video')
+            logging.info("process video")
 
             bytesio = BytesIO(message)
 
@@ -308,7 +333,6 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
             )
 
             logging.info("on video message finished")
-
 
     # @classmethod
     # def create_video_from_image(cls):
