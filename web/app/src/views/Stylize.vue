@@ -6,7 +6,9 @@
         </div>
         <div>
             <img v-if="transferedImage" :src="transferedImage" />
-            <video v-if="transferedVideo" :src="transferedVideo" width="" height="" controls></video>
+            <div v-if="transferedVideo">
+                <p>Download your video here <a :href="transferedVideo" download>{{transferedVideo}}</a> </p>
+            </div>
         </div>
     </div>
 </template>

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import os
 from os import removedirs
 import os.path
 import logging
@@ -6,9 +7,14 @@ import re
 import uuid
 import sys
 from io import BytesIO
-import inspect
 import json
 from collections import deque
+import smtplib
+import email.utils
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
 
 # import glob
 import socket
@@ -37,6 +43,58 @@ log_format = "%(levelname)s %(asctime)s - %(message)s"
 logging.basicConfig(stream=sys.stdout, format=log_format, level=logging.INFO)
 logger = logging.getLogger()
 
+def send_email_with_video(to, video_file):
+
+    # Create the message
+    msg = MIMEMultipart()
+
+    msg["To"] = email.utils.formataddr(("Recipient", to))
+    msg["From"] = email.utils.formataddr(("BlackHighSea", "badapplesweetie@gmail.com"))
+    msg["Subject"] = "Your video is transformed"
+
+    # string to store the body of the mail
+    body = "Hi,\n\nTanks for using my service, here is your video."
+
+    # attach the body with the msg instance
+    msg.attach(MIMEText(body, "plain"))
+
+    # open the file to be sent
+    attachment = open(video_file, "rb")
+
+    # instance of MIMEBase and named as p
+    p = MIMEBase("application", "octet-stream")
+
+    # To change the payload into encoded form
+    p.set_payload((attachment).read())
+
+    # encode into base64
+    encoders.encode_base64(p)
+
+    filename = video_file.split('/').pop()
+
+    p.add_header('Content-Disposition', "attachment; filename= %s" % filename) 
+
+    # attach the instance 'p' to instance 'msg' 
+    msg.attach(p)
+
+    server = smtplib.SMTP()
+
+    server.set_debuglevel(True)  # show communication with the server
+
+    # start TLS for security 
+    # server.starttls() 
+
+    server.connect("in-v3.mailjet.com", 587)
+
+    username = "34b378d5eafaab4a5e6aefd8cbec1363"
+    password = "0bdecd68db9f85aa88eef274aa1b1ba6"
+
+    server.login(username, password)
+
+    try:
+        server.sendmail("badapplesweetie@gmail.com", [to], msg.as_string())
+    finally:
+        server.quit()
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self, doc_uuid=""):
@@ -103,12 +161,7 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
     def check_origin(self, origin):
         return options.debug or bool(re.match(r"^.*\catlog\.kr", origin))
 
-    def get_compression_options(self):
-        # Non-None enables compression with default options.
-        return {}
-
     def open(self, doc_uuid=None):
-
         # we will pass uuid in cookie
         # print("received cookies: ", self.request.cookies)
         # print("received 'myuser': ", self.get_cookie("myuser"))
@@ -133,7 +186,6 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
 
         CartoonGANHandler.remove_clients(self.uuid, self)
 
-    # @tornado.gen.coroutine
     @classmethod
     def cartoongan_image(cls, uuid, client, input_image):
 
@@ -296,6 +348,8 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
 
         logging.info("send out video path %s" % out_video_path)
 
+        # send_email_with_video('hansen1416@163.com', out_video_path)
+
     @classmethod
     def resize_image(cls, img_np):
         # resize image if either weight or height is more than 600
@@ -376,24 +430,6 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
             )
 
             logging.info("on video message finished")
-
-    # @classmethod
-    # def create_video_from_image(cls):
-    #     img_array = []
-    #     for filename in glob.glob('C:/New folder/Images/*.jpg'):
-    #         img = cv2.imread(filename)
-    #         height, width, layers = img.shape
-    #         size = (width,height)
-    #         img_array.append(img)
-
-    #     out = cv2.VideoWriter('project.avi',cv2.VideoWriter_fourcc(*'DIVX'), 15, size)
-
-    #     for i in range(len(img_array)):
-    #         out.write(img_array[i])
-
-    #     cv2.destroyAllWindows()
-    #     out.release()
-
 
 if __name__ == "__main__":
     parse_command_line()
