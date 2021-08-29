@@ -43,6 +43,7 @@ log_format = "%(levelname)s %(asctime)s - %(message)s"
 logging.basicConfig(stream=sys.stdout, format=log_format, level=logging.INFO)
 logger = logging.getLogger()
 
+
 def send_email_with_video(to, video_file):
 
     # Create the message
@@ -70,19 +71,19 @@ def send_email_with_video(to, video_file):
     # encode into base64
     encoders.encode_base64(p)
 
-    filename = video_file.split('/').pop()
+    filename = video_file.split("/").pop()
 
-    p.add_header('Content-Disposition', "attachment; filename= %s" % filename) 
+    p.add_header("Content-Disposition", "attachment; filename= %s" % filename)
 
-    # attach the instance 'p' to instance 'msg' 
+    # attach the instance 'p' to instance 'msg'
     msg.attach(p)
 
     server = smtplib.SMTP()
 
     server.set_debuglevel(True)  # show communication with the server
 
-    # start TLS for security 
-    # server.starttls() 
+    # start TLS for security
+    # server.starttls()
 
     server.connect("in-v3.mailjet.com", 587)
 
@@ -95,6 +96,7 @@ def send_email_with_video(to, video_file):
         server.sendmail("badapplesweetie@gmail.com", [to], msg.as_string())
     finally:
         server.quit()
+
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self, doc_uuid=""):
@@ -232,7 +234,7 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
                     break
 
     @classmethod
-    def cartoongan_video(cls, uuid, client, video_bytesio):
+    def cartoongan_video(cls, uuid, client, video_bytesio, email):
         video_filename = "/sharedvol/test1.mp4"
 
         with open(video_filename, "wb") as outfile:
@@ -248,75 +250,75 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
         logging.info("fps %d" % fps)
 
         ###########
-        # n = 0
-        # frame_images = []
+        n = 0
+        frame_images = []
 
-        # while cap.isOpened():
+        while cap.isOpened():
 
-        #     # Capture frame-by-frame
-        #     success, frame = cap.read()
+            # Capture frame-by-frame
+            success, frame = cap.read()
 
-        #     if success == True:
-        #         # Display the resulting frame
-        #         image_name = "/sharedvol/{}_{}.jpg".format(uuid, n)
+            if success == True:
+                # Display the resulting frame
+                image_name = "/sharedvol/{}_{}.jpg".format(uuid, n)
 
-        #         frame = CartoonGANHandler.resize_image(frame)
+                frame = CartoonGANHandler.resize_image(frame)
 
-        #         cv2.imwrite(image_name, frame)
-        #         frame_images.append(image_name)
+                cv2.imwrite(image_name, frame)
+                frame_images.append(image_name)
 
-        #         logging.info("frame image saved to %s" % image_name)
+                logging.info("frame image saved to %s" % image_name)
 
-        #         n += 1
-        #     else:
-        #         break
+                n += 1
+            else:
+                break
 
-        # # When everything done, release the video capture object
-        # cap.release()
+        # When everything done, release the video capture object
+        cap.release()
 
-        # # Closes all the frames
-        # cv2.destroyAllWindows()
+        # Closes all the frames
+        cv2.destroyAllWindows()
 
-        # model_path = os.path.join("/opt", "gan-generator.pt")
+        model_path = os.path.join("/opt", "gan-generator.pt")
 
-        # HOST, PORT = "cpp-stylize", 8888
-
-        # transferred_frame = []
-
-        # with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-
-        #     s.connect((HOST, PORT))
-
-        #     for i, frame in enumerate(frame_images):
-
-        #         output_image = os.path.join(
-        #             "/sharedvol", "{}_{}_out.jpg".format(uuid, i)
-        #         )
-
-        #         send_msg = model_path + " " + frame + " " + output_image
-
-        #         s.send(send_msg.encode("ascii"))
-
-        #         s.settimeout(10)
-
-        #         try:
-        #             recv_msg = s.recv(1024)
-
-        #             if os.path.isfile(recv_msg):
-        #                 transferred_frame.append(recv_msg)
-
-        #             logging.info("frame transferred saved to %s" % recv_msg)
-        #         except socket.timeout:
-        #             logging.info("socket timeout")
-        #             break
-        ###########
+        HOST, PORT = "cpp-stylize", 8888
 
         transferred_frame = []
 
-        for i in range(0,410):
-            o_i = '/sharedvol/27c7a16c-55bd-46b0-903a-3333a754e872_{}_out.jpg'.format(i)
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 
-            transferred_frame.append(o_i)
+            s.connect((HOST, PORT))
+
+            for i, frame in enumerate(frame_images):
+
+                output_image = os.path.join(
+                    "/sharedvol", "{}_{}_out.jpg".format(uuid, i)
+                )
+
+                send_msg = model_path + " " + frame + " " + output_image
+
+                s.send(send_msg.encode("ascii"))
+
+                s.settimeout(10)
+
+                try:
+                    recv_msg = s.recv(1024)
+
+                    if os.path.isfile(recv_msg):
+                        transferred_frame.append(recv_msg.decode("ascii"))
+
+                    logging.info("frame transferred saved to %s" % recv_msg)
+                except socket.timeout:
+                    logging.info("socket timeout")
+                    break
+        ###########
+
+        # transferred_frame = []
+
+        # for i in range(0,410):
+        #     o_i = '/sharedvol/27c7a16c-55bd-46b0-903a-3333a754e872_{}_out.jpg'.format(i)
+
+        #     transferred_frame.append(o_i)
 
         frame_data_array = []
 
@@ -346,9 +348,9 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
 
         cls.send_message(uuid, client, json.dumps({"video": out_video_path}))
 
-        logging.info("send out video path %s" % out_video_path)
+        send_email_with_video(email, out_video_path)
 
-        # send_email_with_video('hansen1416@163.com', out_video_path)
+        logging.info("send out video path %s" % out_video_path)
 
     @classmethod
     def resize_image(cls, img_np):
@@ -416,7 +418,7 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
             # CartoonGANHandler.cartoongan(self.uuid, self, image_name)
 
             logging.info("on image message finished")
-        elif self.message_queue[-1] == "video":
+        elif self.message_queue[-1][0:5] == "video":
 
             logging.info("process video")
 
@@ -426,10 +428,15 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
             # the logs. Note that this doesn't look like a normal call, since
             # we pass the function object to be called by the IOLoop.
             tornado.ioloop.IOLoop.current().spawn_callback(
-                CartoonGANHandler.cartoongan_video, self.uuid, self, bytesio
+                CartoonGANHandler.cartoongan_video,
+                self.uuid,
+                self,
+                bytesio,
+                self.message_queue[-1][6:],
             )
 
             logging.info("on video message finished")
+
 
 if __name__ == "__main__":
     parse_command_line()

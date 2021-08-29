@@ -12,7 +12,7 @@
         </div>
 
         <!-- To inform user how to upload image -->
-        <div v-show="Imgs.length == 0" class="beforeUpload">
+        <div v-show="Imgs.length == 0 && Videos.length == 0" class="beforeUpload">
             <input
                 type="file"
                 style="z-index: 1"
@@ -124,12 +124,12 @@
             </p>
         </div>
         <div class="imgsPreview" v-show="Imgs.length > 0">
-            <button class="clearButton" @click="reset">
+            <!-- <button class="clearButton" @click="reset">
                 {{ clearAll ? clearAll : "clear All" }}
-            </button>
+            </button> -->
             <div class="imageHolder" v-for="(img, i) in Imgs" :key="i">
                 <img :src="img" />
-                <span class="delete" style="color: white" @click="deleteImg(--i)">
+                <span class="delete" @click="deleteImg(--i)">
                     <svg
                         class="icon"
                         xmlns="http://www.w3.org/2000/svg"
@@ -149,9 +149,9 @@
             </div>
         </div>
         <div class="imgsPreview" v-show="Videos.length > 0">
-            <button class="clearButton" @click="reset">
+            <!-- <button class="clearButton" @click="reset">
                 {{ clearAll ? clearAll : "clear All" }}
-            </button>
+            </button> -->
             <div class="imageHolder" v-for="(video, i) in Videos" :key="i">
                 <video :src="video" width="" height="" controls></video>
                 <span class="delete" style="color: white" @click="deleteImg(--i)">
@@ -246,7 +246,14 @@ export default defineComponent({
             });
         },
         deleteImg(index) {
-            this.Imgs.splice(index, 1);
+            if (this.Imgs.length) {
+                this.Imgs.splice(index, 1);
+            }
+
+            if (this.Videos.length) {
+                this.Videos.splice(index, 1);
+            }
+
             this.files.splice(index, 1);
             this.$emit("delete", this.files);
             this.$refs.uploadInput.value = null;
@@ -273,36 +280,37 @@ export default defineComponent({
                 readers.push(this.readAsDataURL(this.files[i]));
             }
             Promise.all(readers).then((values) => {
+                const mime = values[0].substring(0, 10);
 
-                const mime = values[0].substring(0,10); 
-
-                if (mime == 'data:video') {
+                if (mime == "data:video") {
                     this.Videos = values;
                 } else {
                     this.Imgs = values;
                 }
             });
         },
-        reset() {
-            this.$refs.uploadInput.value = null;
-            this.Imgs = [];
-            this.files = [];
-            this.$emit("change", this.files);
-            console.log(2);
-        },
+        // reset() {
+        //     this.$refs.uploadInput.value = null;
+        //     this.Imgs = [];
+        //     this.files = [];
+        //     this.$emit("change", this.files);
+        //     console.log(2);
+        // },
     },
 });
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .container {
     width: 100%;
     height: 100%;
     background: #f7fafc;
     border: 0.5px solid #a3a8b1;
     border-radius: 10px;
-    padding: 30px;
+    padding: 20px 30px;
     position: relative;
+    text-align: center;
+    box-sizing: border-box;
 }
 .drop {
     width: 100%;
@@ -340,21 +348,43 @@ export default defineComponent({
     margin: auto;
     display: block;
 }
-.imgsPreview .imageHolder {
-    width: 150px;
-    height: 150px;
-    background: #fff;
-    position: relative;
-    border-radius: 10px;
-    margin: 5px 5px;
-    display: inline-block;
+.imgsPreview {
+    .imageHolder {
+        width: 300px;
+        height: 300px;
+        background: #fff;
+        position: relative;
+        border-radius: 10px;
+        display: inline-block;
+        text-align: center;
+
+        img {
+            object-fit: cover;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .delete {
+
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 30px;
+            height: 30px;
+
+            .icon {
+                width: 66%;
+                height: 66%;
+                display: block;
+                margin: 4px auto;
+            }
+            &:hover {
+                cursor: pointer;
+            }
+        }
+    }
 }
-.imgsPreview .imageHolder img {
-    object-fit: cover;
-    width: 100%;
-    height: 100%;
-}
-.imgsPreview .imageHolder .delete {
+.imgsPreview .imageHolder .imgsPreview .imageHolder .delete {
     position: absolute;
     top: 4px;
     right: 4px;
@@ -364,16 +394,8 @@ export default defineComponent({
     background: red;
     border-radius: 50%;
 }
-.imgsPreview .imageHolder .delete:hover {
-    cursor: pointer;
-}
-.imgsPreview .imageHolder .delete .icon {
-    width: 66%;
-    height: 66%;
-    display: block;
-    margin: 4px auto;
-}
-.imgsPreview .imageHolder .plus {
+
+.imgsPreview .imageHolder .delete .imgsPreview .imageHolder .plus {
     color: #2d3748;
     background: #f7fafc;
     border-radius: 50%;
