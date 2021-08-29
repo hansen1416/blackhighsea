@@ -17,6 +17,15 @@
             </div>
             <button class="submit" @click="submitImage">submit</button>
         </section>
+        <div class="email">
+            <input
+                v-if="mode == 'video'"
+                placeholder="email to receive the video"
+                type="email"
+                name="email"
+                v-model="email"
+            />
+        </div>
         <div v-if="transferedVideo">
             <p>
                 Download your video here
@@ -47,7 +56,7 @@ export default defineComponent({
     created() {
         console.log("Stylize created");
 
-        this.email = "hansen1416@163.com";
+        // this.email = "hansen1416@163.com";
 
         this.ws = new WebSocket("ws://127.0.0.1:4601/ws/cartoongan");
 
@@ -85,6 +94,14 @@ export default defineComponent({
     methods: {
         handleImage(files: File[]) {
             this.origin_image = files[0];
+
+            const mimeType = this.origin_image.type.substring(0, 5);
+
+            if (mimeType == "image") {
+                this.mode = "image";
+            } else if (mimeType == "video") {
+                this.mode = "video";
+            }
         },
         deleteImage() {
             console.info("deleted");
@@ -94,7 +111,7 @@ export default defineComponent({
                 return false;
             }
 
-            if (this.origin_image.type.substring(0, 5) == "image") {
+            if (this.mode == "image") {
                 this.ws.send("image");
 
                 this.origin_image.arrayBuffer().then((buffer: ArrayBuffer) => {
@@ -102,7 +119,7 @@ export default defineComponent({
                 });
             }
 
-            if (this.origin_image.type.substring(0, 5) == "video") {
+            if (this.mode == "video") {
                 const pseudoVideo = document.createElement("video");
 
                 pseudoVideo.onloadeddata = () => {
@@ -112,13 +129,17 @@ export default defineComponent({
                         return;
                     }
 
-                    // console.log(pseudoVideo);
+                    if (!this.email) {
+                        alert("Please enter your email address to receive the transformed video");
 
-                    // this.ws.send("video:" + this.email);
+                        return;   
+                    }
 
-                    // this.origin_image.arrayBuffer().then((buffer: ArrayBuffer) => {
-                    //     this.ws.send(buffer);
-                    // });
+                    this.ws.send("video:" + this.email);
+
+                    this.origin_image.arrayBuffer().then((buffer: ArrayBuffer) => {
+                        this.ws.send(buffer);
+                    });
                 };
                 // create url from blob
                 pseudoVideo.src = URL.createObjectURL(this.origin_image);
@@ -186,5 +207,11 @@ section {
         line-height: 30px;
         cursor: pointer;
     }
+}
+
+.email {
+    position: relative;
+    text-align: right;
+    padding: 10px 20px;
 }
 </style>
