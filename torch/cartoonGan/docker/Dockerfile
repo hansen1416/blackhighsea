@@ -11,4 +11,3 @@ COPY cartoonGan /opt/cartoonGan
 WORKDIR /opt
 
 CMD ["./cartoonGan"]
-# CMD ["tail", "-f", "/dev/null"]

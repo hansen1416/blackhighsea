@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: websocket-server
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 4601
+      nodePort: 30000
+  selector:
+    app: bhs
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: websocket-server
+spec:
+  selector:
+    matchLabels:
+      app: bhs
+  template:
+    metadata:
+      labels:
+        app: bhs
+    spec:
+      containers:
+      - name: websocket-server
+        image: hansen1416/bhs-py-websocket
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 4601
+          # periodSeconds: 1
+        ports:
+        - containerPort: 4601
+        volumeMounts:
+        - mountPath: /sharedvol
+          name: pvc
+        resources:
+          limits:
+            memory: 0.5Gi
+            cpu: "0.25"
+      volumes:
+      - name: pvc
+        persistentVolumeClaim:
+          claimName: bhs-media-claim
+          readOnly: false

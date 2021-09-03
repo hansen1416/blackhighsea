@@ -104,6 +104,9 @@ class MainHandler(tornado.web.RequestHandler):
 
         self.write("hi, " + doc_uuid)
 
+class HealthHandler(tornado.web.RequestHandler):
+    def get(self):
+        self.write("ok")
 
 class CartoonGANHandler(tornado.websocket.WebSocketHandler):
     clients = {}
@@ -450,9 +453,8 @@ if __name__ == "__main__":
 
     handlers = [
         (r"/", MainHandler),
+        (r"/health", HealthHandler),
         (r"/ws/cartoongan", CartoonGANHandler),
-        # (r"/parser/ws", CartoonGANHandler),
-        # (r"/parser/ws/([^/]+)", CartoonGANHandler),
         # (r"/parser/static/(.*)", tornado.web.StaticCartoonGANHandler, {"path": settings["static_path"]})
     ]
 

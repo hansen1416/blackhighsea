@@ -21,5 +21,10 @@ RUN apt-get -y update && \
 
 EXPOSE 4601
 
+RUN mkdir /sharedvol
+
 WORKDIR /app
-# CMD ["python3", "python-websockets_websocket-benchmark-server.py"]
+
+COPY ./app/wsserver.py /app
+
+CMD ["python3", "-u", "./wsserver.py"]

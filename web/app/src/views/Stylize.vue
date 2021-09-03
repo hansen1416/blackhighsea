@@ -38,6 +38,7 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import UploadImages from "@/components/UploadImages.vue";
+import axios, { AxiosResponse } from "axios";
 
 export default defineComponent({
     components: {
@@ -58,7 +59,7 @@ export default defineComponent({
 
         // this.email = "hansen1416@163.com";
 
-        this.ws = new WebSocket("ws://127.0.0.1:4601/ws/cartoongan");
+        this.ws = new WebSocket("ws://34.92.86.17:4601/ws/cartoongan");
 
         this.ws.onopen = () => {
             console.log("ws Connected.");
@@ -71,13 +72,13 @@ export default defineComponent({
                 if (data.image) {
                     const image_name = data.image.split("/").pop();
 
-                    this.transferedImage = "http://localhost:4602/" + image_name;
+                    this.transferedImage = "http://34.92.229.70:4602/" + image_name;
 
                     console.log(this.transferedImage);
                 } else if (data.video) {
                     const video_name = data.video.split("/").pop();
 
-                    this.transferedVideo = "http://localhost:4602/" + video_name;
+                    this.transferedVideo = "http://34.92.229.70:4602/" + video_name;
 
                     console.log(this.transferedVideo);
                 }
@@ -89,6 +90,10 @@ export default defineComponent({
         this.ws.onclose = () => {
             console.log("ws Connection is closed...");
         };
+
+        // axios.get("http://localhost:4602/health").then((response: AxiosResponse) => {
+        //     console.log(response);
+        // });
     },
     computed: {},
     methods: {
@@ -130,9 +135,11 @@ export default defineComponent({
                     }
 
                     if (!this.email) {
-                        alert("Please enter your email address to receive the transformed video");
+                        alert(
+                            "Please enter your email address to receive the transformed video"
+                        );
 
-                        return;   
+                        return;
                     }
 
                     this.ws.send("video:" + this.email);
