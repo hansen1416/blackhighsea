@@ -200,7 +200,7 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
         # input_image = os.path.join('/sharedvol', 'test.jpg')
         output_image = os.path.join("/sharedvol", uuid + str(int(time())) + "_out.jpg")
 
-        HOST, PORT = "10.3.250.250", 8888
+        HOST, PORT = "cpp-stylize", 8888
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 
@@ -400,7 +400,7 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
             nparr = np.fromstring(message, np.uint8)
 
             logging.info(nparr)
-
+            # todo, move this to tencent cloud storage
             image_name = os.path.join("/sharedvol", self.uuid + ".jpg")
 
             # read image from string

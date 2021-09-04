@@ -23,14 +23,14 @@ services:
       working_dir: /app
       command: ["npm", "run", "serve"]
 
-    nginx-static:
-      networks:
-        - bhs
-      image: nginx:1.21.1-alpine
-      ports:
-        - 4602:80
-      volumes:
-        - ${SHARED_DATA}:/usr/share/nginx/html
+    # nginx-static:
+    #   networks:
+    #     - bhs
+    #   image: nginx:1.21.1-alpine
+    #   ports:
+    #     - 4602:80
+    #   volumes:
+    #     - ${SHARED_DATA}:/usr/share/nginx/html
 
     # py-api:
     #   networks:

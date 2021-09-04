@@ -4,14 +4,14 @@ metadata:
   name: cpp-stylize
 spec:
   type: ClusterIP
-  clusterIP: 10.3.250.250
+  # clusterIP: 10.3.250.250
   ports:
     - protocol: TCP
       port: 8888
       targetPort: 8888
   # internalTrafficPolicy: Local
   selector:
-    app: bhs
+    app: bhs-cpp-stylize
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -20,11 +20,11 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: bhs
+      app: bhs-cpp-stylize
   template:
     metadata:
       labels:
-        app: bhs
+        app: bhs-cpp-stylize
     spec:
       containers:
       - name: cpp-stylize

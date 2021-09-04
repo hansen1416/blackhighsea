@@ -59,7 +59,7 @@ export default defineComponent({
 
         // this.email = "hansen1416@163.com";
 
-        this.ws = new WebSocket("ws://34.96.166.82:4601/ws/cartoongan");
+        this.ws = new WebSocket("ws://localhost:4601/ws/cartoongan");
 
         this.ws.onopen = () => {
             console.log("ws Connected.");
@@ -72,13 +72,13 @@ export default defineComponent({
                 if (data.image) {
                     const image_name = data.image.split("/").pop();
 
-                    this.transferedImage = "http://34.92.229.70:4602/" + image_name;
+                    this.transferedImage = "http://localhost:4602/" + image_name;
 
                     console.log(this.transferedImage);
                 } else if (data.video) {
                     const video_name = data.video.split("/").pop();
 
-                    this.transferedVideo = "http://34.92.229.70:4602/" + video_name;
+                    this.transferedVideo = "http://localhost:4602/" + video_name;
 
                     console.log(this.transferedVideo);
                 }

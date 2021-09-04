@@ -8,7 +8,7 @@ spec:
     - port: 4601
       nodePort: 30000
   selector:
-    app: bhs
+    app: bhs-websocket-server
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -17,11 +17,11 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: bhs
+      app: bhs-websocket-server
   template:
     metadata:
       labels:
-        app: bhs
+        app: bhs-websocket-server
     spec:
       containers:
       - name: websocket-server
