@@ -13,17 +13,17 @@ spec:
     ports:
     - containerPort: 8888
       protocol: TCP
-    volumeMounts:
-    - mountPath: /sharedvol
-      name: pvc
+    # volumeMounts:
+    # - mountPath: /sharedvol
+    #   name: pvc
     resources:
       limits:
         memory: 1Gi
         cpu: "0.25"
   restartPolicy: OnFailure
-  volumes:
-  - name: pvc
-    persistentVolumeClaim:
-      claimName: bhs-media-claim
-      readOnly: false
+  # volumes:
+  # - name: pvc
+  #   persistentVolumeClaim:
+  #     claimName: bhs-media-claim
+  #     readOnly: false
 # The pod template ends here
