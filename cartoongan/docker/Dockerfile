@@ -10,4 +10,6 @@ COPY cartoonGan /opt/cartoonGan
 
 WORKDIR /opt
 
+EXPOSE 8888
+
 CMD ["./cartoonGan"]
