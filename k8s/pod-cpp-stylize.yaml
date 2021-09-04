@@ -1,29 +1,51 @@
 apiVersion: v1
-kind: Pod
+kind: Service
 metadata:
   name: cpp-stylize
-# This is the pod template
 spec:
-  containers:
-  - name: cpp-stylize
-    image: hansen1416/bhs-cpp-stylize
-    livenessProbe:
-      tcpSocket:
-        port: 8888
-    ports:
-    - containerPort: 8888
-      protocol: TCP
-    # volumeMounts:
-    # - mountPath: /sharedvol
-    #   name: pvc
-    resources:
-      limits:
-        memory: 1Gi
-        cpu: "0.25"
-  restartPolicy: OnFailure
-  # volumes:
-  # - name: pvc
-  #   persistentVolumeClaim:
-  #     claimName: bhs-media-claim
-  #     readOnly: false
-# The pod template ends here
+  type: ClusterIP
+  clusterIP: 10.3.250.250
+  ports:
+    - protocol: TCP
+      port: 8888
+      targetPort: 8888
+  # internalTrafficPolicy: Local
+  selector:
+    app: bhs
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cpp-stylize
+spec:
+  selector:
+    matchLabels:
+      app: bhs
+  template:
+    metadata:
+      labels:
+        app: bhs
+    spec:
+      containers:
+      - name: cpp-stylize
+        image: hansen1416/bhs-cpp-stylize
+        livenessProbe:
+          tcpSocket:
+            port: 8888
+          # periodSeconds: 1
+        ports:
+        - containerPort: 8888
+          protocol: TCP
+        # volumeMounts:
+        # - mountPath: /sharedvol
+        #   name: pvc
+        resources:
+          limits:
+            memory: 0.5Gi
+            cpu: "0.25"
+      restartPolicy: Always
+      # volumes:
+      # - name: pvc
+      #   persistentVolumeClaim:
+      #     claimName: bhs-media-claim
+      #     readOnly: false

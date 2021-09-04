@@ -200,11 +200,13 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
         # input_image = os.path.join('/sharedvol', 'test.jpg')
         output_image = os.path.join("/sharedvol", uuid + str(int(time())) + "_out.jpg")
 
-        HOST, PORT = "cpp-stylize", 8888
+        HOST, PORT = "10.3.250.250", 8888
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 
             s.connect((HOST, PORT))
+
+            logging.info("connected to host {} port {}".format(HOST, PORT))
 
             send_msg = model_path + " " + input_image + " " + output_image
 

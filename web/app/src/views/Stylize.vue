@@ -59,7 +59,7 @@ export default defineComponent({
 
         // this.email = "hansen1416@163.com";
 
-        this.ws = new WebSocket("ws://34.92.86.17:4601/ws/cartoongan");
+        this.ws = new WebSocket("ws://34.96.166.82:4601/ws/cartoongan");
 
         this.ws.onopen = () => {
             console.log("ws Connected.");
