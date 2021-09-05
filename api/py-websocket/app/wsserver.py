@@ -8,6 +8,13 @@ import uuid
 import sys
 from io import BytesIO
 import json
+
+# import glob
+import socket
+from time import time
+
+# import datetime
+
 from collections import deque
 import smtplib
 import email.utils
@@ -16,12 +23,7 @@ from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
 
-# import glob
-import socket
-from time import time
-import datetime
-
-import asyncio
+# import asyncio
 import numpy as np
 import cv2
 import tornado.escape
@@ -30,8 +32,9 @@ import tornado.web
 import tornado.websocket
 import tornado.locks
 import tornado.gen
-
 from tornado.options import define, options, parse_command_line
+from qcloud_cos import CosConfig
+from qcloud_cos import CosS3Client
 
 define("port", default=4601, help="run on the given port", type=int)
 define("debug", default=True, help="run in debug mode")
@@ -104,9 +107,11 @@ class MainHandler(tornado.web.RequestHandler):
 
         self.write("hi, " + doc_uuid)
 
+
 class HealthHandler(tornado.web.RequestHandler):
     def get(self):
         self.write("ok")
+
 
 class CartoonGANHandler(tornado.websocket.WebSocketHandler):
     clients = {}
@@ -395,6 +400,53 @@ class CartoonGANHandler(tornado.websocket.WebSocketHandler):
 
         if len(self.message_queue) <= 0 or not isinstance(message, type(b"")):
             return
+
+        # nparr = np.fromstring(message, np.uint8)
+
+        # logging.info(nparr)
+        # # todo, move this to tencent cloud storage
+        # image_name = os.path.join("/sharedvol", self.uuid + ".jpg")
+
+        # # read image from string
+        # nparr = np.fromstring(message, np.uint8)
+        # img_np = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+        # img_np = CartoonGANHandler.resize_image(img_np)
+
+        # cv2.imwrite(image_name, img_np)
+
+        secret_id = "AKIDaz7yYvve6HCqDI7eutd7KFvMXR3PUIp6"
+        secret_key = "1lDOJxKQFn32lDNGsEI5bqoVu3RYNvDF"
+        cos_bucket = "bhs-1254289668"
+        cos_host = 'https://bhs-1254289668.cos.ap-shanghai.myqcloud.com'
+
+        region = "ap-shanghai"  # 替换为用户的 Region
+        token = None  # 使用临时密钥需要传入 Token，默认为空，可不填
+        scheme = "https"  # 指定使用 http/https 协议来访问 COS，默认为 https，可不填
+        config = CosConfig(
+            Region=region,
+            SecretId=secret_id,
+            SecretKey=secret_key,
+            Token=token,
+            Scheme=scheme,
+        )
+        # 2. 获取客户端对象
+        client = CosS3Client(config)
+
+        file_name = 'imgs/' + self.uuid + ".jpg"
+
+        response = client.put_object(
+            Bucket=cos_bucket,
+            Body=message,
+            Key=file_name,
+            StorageClass='STANDARD',
+            ContentType="image/jpeg; charset=utf-8",
+            # Metadata={"x-cos-meta-key1": "value1", "x-cos-meta-key2": "value2"},
+        )
+
+        logging.info(response['ETag'])
+
+        return
 
         if self.message_queue[-1] == "image":
             nparr = np.fromstring(message, np.uint8)

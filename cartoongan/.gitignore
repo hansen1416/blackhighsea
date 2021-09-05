@@ -6,3 +6,4 @@ output/*
 docker/libtorch*
 docker/opencv
 docker/cartoonGan
+docker/cos
