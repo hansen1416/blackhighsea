@@ -10,18 +10,14 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 # Update and install dependencies
 RUN apt-get -y update \
     && apt-get -y upgrade \
-    && apt-get -y install git python3-pip
+    && apt-get -y install git python3-pip \
+    && apt-get install -y python3-opencv
 
 # Install project requirements
 # RUN pip3 install asyncio websockets setuptools
-RUN pip3 install numpy tornado opencv-python
-
-RUN apt-get -y update && \
-    apt-get install -y python3-opencv
+RUN pip3 install numpy tornado opencv-python cos-python-sdk-v5
 
 EXPOSE 4601
-
-RUN mkdir /sharedvol
 
 WORKDIR /app
 
