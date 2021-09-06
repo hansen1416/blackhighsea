@@ -7,8 +7,6 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/opencv.hpp>
 
-// #include <pthread.h>
-
 #include "cos_api.h"
 #include "cos_sys_config.h"
 #include "cos_defines.h"

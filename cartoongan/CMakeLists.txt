@@ -6,6 +6,10 @@ set(Torch_DIR /opt/libtorch/share/cmake/Torch)
 
 set(OpenCV_DIR /opt/opencv/lib/cmake/opencv4)
 
+set(CMAKE_BUILD_TYPE Debug)
+
+set(CMAKE_BUILD_TYPE RelWithDebInfo)
+
 # set(SYSTEM_LIBS stdc++ pthread)
 
 # set(CMAKE_C_FLAGS -pthread)

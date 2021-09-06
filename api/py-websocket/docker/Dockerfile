@@ -17,6 +17,8 @@ RUN apt-get -y update \
 # RUN pip3 install asyncio websockets setuptools
 RUN pip3 install numpy tornado opencv-python cos-python-sdk-v5
 
+RUN pip3 install oss2
+
 EXPOSE 4601
 
 WORKDIR /app
