@@ -23,6 +23,6 @@ EXPOSE 4601
 
 WORKDIR /app
 
-COPY ./app/wsserver.py /app
+COPY ./app/httpserver.py /app
 
-CMD ["python3", "-u", "./wsserver.py"]
+CMD ["python3", "-u", "./httpserver.py"]

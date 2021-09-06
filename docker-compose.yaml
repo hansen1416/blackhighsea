@@ -53,8 +53,8 @@ services:
         - 4601:4601
       volumes:
         - ${PY_WEBSOCKET_SOURCE}:/app
-        - ${SHARED_DATA}:/sharedvol # input/output images
-      command: ["python3", "-u", "./wsserver.py"]
+        # - ${SHARED_DATA}:/sharedvol # input/output images
+      # command: ["python3", "-u", "./httpserver.py"]
       # command: ["tail", "-f", "/dev/null"]
 
     # py-cartoongan:
@@ -78,16 +78,16 @@ services:
     #   volumes:
     #     - ${PY_SELENIUM_SOURCE}:/app
 
-    cpp-stylize:
-      networks:
-        - bhs
-      image: hansen1416/bhs-cpp-stylize
-      # ports:
-      #   - 4602:8888
-      volumes:
-        # - ${CPP_STYLIZE_OPT}:/opt
-        - ${SHARED_DATA}:/sharedvol 
-        # c++ executive, pre-trained model, input/output images
+    # cpp-stylize:
+    #   networks:
+    #     - bhs
+    #   image: hansen1416/bhs-cpp-stylize
+    #   # ports:
+    #   #   - 4602:8888
+    #   volumes:
+    #     # - ${CPP_STYLIZE_OPT}:/opt
+    #     - ${SHARED_DATA}:/sharedvol 
+    #     # c++ executive, pre-trained model, input/output images
 
 networks:
     bhs:
