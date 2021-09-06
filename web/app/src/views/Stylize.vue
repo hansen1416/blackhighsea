@@ -118,7 +118,11 @@ export default defineComponent({
 
             const data = new FormData();
 
-            data.append('img', this.origin_image)
+            data.append('media', this.origin_image);
+
+            if (this.mode == "video"){
+                data.append('email', this.email);
+            }
 
             axios.post('http://localhost:4601/cartoongan', data)
             .then(function (response: AxiosResponse) {

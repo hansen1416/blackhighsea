@@ -195,16 +195,24 @@ class CartoonGANHandler(tornado.web.RequestHandler):
         )
 
     def post(self):
-        file1 = self.request.files["img"][0]
+
+        file1 = self.request.files["media"][0]
         original_fname = file1["filename"]
+
+        email = self.get_body_argument('email', default = '')
 
         # 阿里云账号AccessKey拥有所有API的访问权限，风险很高。强烈建议您创建并使用RAM用户进行API访问或日常运维，请登录RAM控制台创建RAM用户。
         auth = oss2.Auth("LTAI5tLwV38wLDsnsxKEdX3f", "vC8Uv3jophlVnRSkNBWkqTkp9fL9F7")
         # yourEndpoint填写Bucket所在地域对应的Endpoint。以华东1（杭州）为例，Endpoint填写为https://oss-cn-hangzhou.aliyuncs.com。
         # 填写Bucket名称。
         bucket = oss2.Bucket(auth, "oss-cn-hongkong.aliyuncs.com", "bhs-media")
-        object_name = "imgs/" + str(time()) + "_" + original_fname
-        output_object = "imgs/cg_" + str(time()) + "_" + original_fname
+
+        if email:
+            object_name = "videos/" + str(time()) + "_" + original_fname
+            output_object = "videos/cg_" + str(time()) + "_" + original_fname
+        else:
+            object_name = "imgs/" + str(time()) + "_" + original_fname
+            output_object = "imgs/cg_" + str(time()) + "_" + original_fname
 
         try:
             # 填写Object完整路径和Bytes内容。Object完整路径中不能包含Bucket名称。
@@ -214,12 +222,15 @@ class CartoonGANHandler(tornado.web.RequestHandler):
 
             hostname = "https://bhs-media.oss-cn-hongkong.aliyuncs.com/"
 
-            # The IOLoop will catch the exception and print a stack trace in
-            # the logs. Note that this doesn't look like a normal call, since
-            # we pass the function object to be called by the IOLoop.
-            tornado.ioloop.IOLoop.current().spawn_callback(
-                cartoongan_image, hostname + object_name, output_object
-            )
+            if email:
+                pass
+            else:
+                # The IOLoop will catch the exception and print a stack trace in
+                # the logs. Note that this doesn't look like a normal call, since
+                # we pass the function object to be called by the IOLoop.
+                tornado.ioloop.IOLoop.current().spawn_callback(
+                    cartoongan_image, hostname + object_name, output_object
+                )
 
             self.write(hostname + object_name)
 
