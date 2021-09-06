@@ -7,3 +7,6 @@ docker/libtorch*
 docker/opencv
 docker/cartoonGan
 docker/cos
+
+cos-cpp-sdk-v5
+aliyun-oss-cpp-sdk
