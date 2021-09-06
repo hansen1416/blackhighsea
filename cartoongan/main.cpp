@@ -101,7 +101,7 @@ int main(int argc, const char *argv[])
 
     std::cout << sizeof(buffer) << std::endl;
 
-    cv::Mat my_mat = cv::Mat(400, 400, CV_8UC3, &buffer);
+    cv::Mat my_mat = cv::Mat(400, 400, CV_8UC3, &buffer[0]);
     // cv::Mat my_mat = cv::imread(&str[0]);
 
     std::cout << my_mat.size() << std::endl;
