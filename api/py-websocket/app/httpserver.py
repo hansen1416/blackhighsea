@@ -104,28 +104,28 @@ def send_email_with_video(to, video_file):
         server.quit()
 
 
-# def resize_image(img_np):
-#     # resize image if either weight or height is more than 600
-#     # if the size is too big, it will crush the pytorch model
-#     max_size = 600
-#     scale_percent = 0
+def resize_image(img_np):
+    # resize image if either weight or height is more than 600
+    # if the size is too big, it will crush the pytorch model
+    max_size = 600
+    scale_percent = 0
 
-#     if img_np.shape[1] > img_np.shape[0] and img_np.shape[1] > max_size:
-#         scale_percent = max_size / img_np.shape[1]
-#     elif img_np.shape[0] > img_np.shape[1] and img_np.shape[0] > max_size:
-#         scale_percent = max_size / img_np.shape[0]
+    if img_np.shape[1] > img_np.shape[0] and img_np.shape[1] > max_size:
+        scale_percent = max_size / img_np.shape[1]
+    elif img_np.shape[0] > img_np.shape[1] and img_np.shape[0] > max_size:
+        scale_percent = max_size / img_np.shape[0]
 
-#     dim = (
-#         int(img_np.shape[1] * scale_percent),
-#         int(img_np.shape[0] * scale_percent),
-#     )
+    dim = (
+        int(img_np.shape[1] * scale_percent),
+        int(img_np.shape[0] * scale_percent),
+    )
 
-#     if scale_percent != 0:
-#         logging.info("resized to {} x {}".format(dim[0], dim[1]))
+    if scale_percent != 0:
+        logging.info("resized to {} x {}".format(dim[0], dim[1]))
 
-#         img_np = cv2.resize(img_np, dim, interpolation=cv2.INTER_AREA)
+        img_np = cv2.resize(img_np, dim, interpolation=cv2.INTER_AREA)
 
-#     return img_np
+    return img_np
 
 
 def cartoongan_image(input_image, output_image):
@@ -209,10 +209,14 @@ class CartoonGANHandler(BaseHandler):
 
         media = self.request.files["media"][0]
         original_fname = media["filename"]
+        # media['body'] is ninary, ndarray is np.ndarray
+        ndarray = cv2.imdecode(np.frombuffer(media['body'], np.uint8), cv2.IMREAD_COLOR)
+        # resize if the image is too big
+        ndarray = resize_image(ndarray)
+        # from ndarray back to bytes
+        bytes_tuple = cv2.imencode('.jpg', ndarray)
 
-        logging.info(str(type(media)))
-
-        return
+        media['body'] = bytes_tuple[1].tobytes()
 
         email = self.get_body_argument("email", default="")
 
