@@ -11,11 +11,11 @@ COPY aliyun-oss-cpp-sdk/sdk/include /opt/aliyun-oss-cpp-sdk/sdk/include
 COPY aliyun-oss-cpp-sdk/build/lib/libalibabacloud-oss-cpp-sdk.so /opt/aliyun-oss-cpp-sdk/build/lib/libalibabacloud-oss-cpp-sdk.so
 
 COPY gan-generator.pt /opt/gan-generator.pt
-# COPY cartoonGan /opt/cartoonGan
+COPY cartoonGan /opt/cartoonGan
 
 WORKDIR /opt
 
-EXPOSE 8888
+EXPOSE 4602
 
-# CMD ["./cartoonGan"]
-CMD ["tail", "-f", "/dev/null"]
+CMD ["./cartoonGan"]
+# CMD ["tail", "-f", "/dev/null"]

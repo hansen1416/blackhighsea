@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os
-from os import removedirs
+
+# from os import removedirs
 import os.path
 import logging
 import re
@@ -15,8 +16,8 @@ import socket
 from time import time
 
 # import datetime
+# from collections import deque
 
-from collections import deque
 import smtplib
 import email.utils
 from email.mime.multipart import MIMEMultipart
@@ -29,19 +30,17 @@ import oss2
 # import asyncio
 import numpy as np
 import cv2
-import tornado.escape
-import tornado.ioloop
 import tornado.web
-import tornado.websocket
-import tornado.locks
-import tornado.gen
-from tornado.options import define, options, parse_command_line
 
-# from qcloud_cos import CosConfig
-# from qcloud_cos import CosS3Client
+# import tornado.escape
+# import tornado.ioloop
+# import tornado.websocket
+# import tornado.locks
+# import tornado.gen
+# from tornado.options import define, options, parse_command_line
 
-define("port", default=4601, help="run on the given port", type=int)
-define("debug", default=True, help="run in debug mode")
+# define("port", default=4601, help="run on the given port", type=int)
+# define("debug", default=True, help="run in debug mode")
 
 # lock = tornado.locks.Lock()
 
@@ -94,8 +93,8 @@ def send_email_with_video(to, video_file):
 
     server.connect("in-v3.mailjet.com", 587)
 
-    username = "34b378d5eafaab4a5e6aefd8cbec1363"
-    password = "0bdecd68db9f85aa88eef274aa1b1ba6"
+    username = os.environ.get("SMTP_USERNAME")
+    password = os.environ.get("SMTP_PASSWORD")
 
     server.login(username, password)
 
@@ -174,17 +173,7 @@ def cartoongan_image(input_image, output_image):
                 break
 
 
-class MainHandler(tornado.web.RequestHandler):
-    def get(self):
-        self.write("hi!")
-
-
-class HealthHandler(tornado.web.RequestHandler):
-    def get(self):
-        self.write("ok")
-
-
-class CartoonGANHandler(tornado.web.RequestHandler):
+class BaseHandler(tornado.web.RequestHandler):
     def set_default_headers(self):
         # print "setting headers!!!"
         self.set_header("Access-Control-Allow-Origin", "*")
@@ -194,16 +183,44 @@ class CartoonGANHandler(tornado.web.RequestHandler):
             "x-requested-with,access-control-allow-origin,authorization,content-type",
         )
 
+    def get(self):
+        self.write("get ok")
+
+    def post(self):
+        self.write("post ok")
+
+    def options(self, *args):
+        # no body
+        # `*args` is for route with `path arguments` supports
+        self.set_status(204)
+        self.finish()
+
+
+class MainHandler(BaseHandler):
+    pass
+
+
+class HealthHandler(BaseHandler):
+    pass
+
+
+class CartoonGANHandler(BaseHandler):
     def post(self):
 
-        file1 = self.request.files["media"][0]
-        original_fname = file1["filename"]
+        media = self.request.files["media"][0]
+        original_fname = media["filename"]
 
-        email = self.get_body_argument('email', default = '')
+        logging.info(str(type(media)))
+
+        return
+
+        email = self.get_body_argument("email", default="")
 
         # 阿里云账号AccessKey拥有所有API的访问权限，风险很高。强烈建议您创建并使用RAM用户进行API访问或日常运维，请登录RAM控制台创建RAM用户。
-        auth = oss2.Auth("LTAI5tLwV38wLDsnsxKEdX3f", "vC8Uv3jophlVnRSkNBWkqTkp9fL9F7")
-        # yourEndpoint填写Bucket所在地域对应的Endpoint。以华东1（杭州）为例，Endpoint填写为https://oss-cn-hangzhou.aliyuncs.com。
+        auth = oss2.Auth(
+            os.environ.get("ALI_ACCESS_ID"), os.environ.get("ALI_ACCESS_KEY")
+        )
+        # yourEndpoint填写Bucket所在地域对应的Endpoint
         # 填写Bucket名称。
         bucket = oss2.Bucket(auth, "oss-cn-hongkong.aliyuncs.com", "bhs-media")
 
@@ -216,11 +233,9 @@ class CartoonGANHandler(tornado.web.RequestHandler):
 
         try:
             # 填写Object完整路径和Bytes内容。Object完整路径中不能包含Bucket名称。
-            bucket.put_object(
-                object_name, file1["body"]
-            )
-
-            hostname = "https://bhs-media.oss-cn-hongkong.aliyuncs.com/"
+            bucket.put_object(object_name, media["body"])
+            # becareful, no https:// prefix here, in cpp we are searching for '/'
+            hostname = "bhs-media.oss-cn-hongkong.aliyuncs.com/"
 
             if email:
                 pass
@@ -236,15 +251,6 @@ class CartoonGANHandler(tornado.web.RequestHandler):
 
         finally:
             logging.info("upload image failed")
-
-    def get(self):
-        self.write("some get")
-
-    def options(self, *args):
-        # no body
-        # `*args` is for route with `path arguments` supports
-        self.set_status(204)
-        self.finish()    
 
     @classmethod
     def cartoongan_video(cls, uuid, client, video_bytesio, email):
@@ -294,7 +300,7 @@ class CartoonGANHandler(tornado.web.RequestHandler):
 
         model_path = os.path.join("/opt", "gan-generator.pt")
 
-        HOST, PORT = "cpp-stylize", 8888
+        HOST, PORT = "cpp-stylize", 4602
 
         transferred_frame = []
 
@@ -364,10 +370,11 @@ class CartoonGANHandler(tornado.web.RequestHandler):
         send_email_with_video(email, out_video_path)
 
         logging.info("send out video path %s" % out_video_path)
-        
+
 
 if __name__ == "__main__":
-    parse_command_line()
+
+    port = 4601
 
     app = tornado.web.Application(
         [
@@ -380,8 +387,8 @@ if __name__ == "__main__":
     )
 
     http_server = tornado.httpserver.HTTPServer(app)
-    http_server.listen(options.port)
+    http_server.listen(port)
 
-    logger.info("listening on port " + str(options.port))
+    logger.info("listening on port " + str(port))
 
     tornado.ioloop.IOLoop.current().start()

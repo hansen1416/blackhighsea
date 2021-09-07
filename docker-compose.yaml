@@ -53,7 +53,11 @@ services:
         - 4601:4601
       volumes:
         - ${PY_WEBSOCKET_SOURCE}:/app
-        # - ${SHARED_DATA}:/sharedvol # input/output images
+      environment:
+        - ALI_ACCESS_ID=${ALI_ACCESS_ID}
+        - ALI_ACCESS_KEY=${ALI_ACCESS_KEY}
+        - SMTP_USERNAME=${SMTP_USERNAME}
+        - SMTP_PASSWORD=${SMTP_PASSWORD}
       # command: ["python3", "-u", "./httpserver.py"]
       # command: ["tail", "-f", "/dev/null"]
 
@@ -78,16 +82,19 @@ services:
     #   volumes:
     #     - ${PY_SELENIUM_SOURCE}:/app
 
-    # cpp-stylize:
-    #   networks:
-    #     - bhs
-    #   image: hansen1416/bhs-cpp-stylize
-    #   # ports:
-    #   #   - 4602:8888
-    #   volumes:
-    #     # - ${CPP_STYLIZE_OPT}:/opt
-    #     - ${SHARED_DATA}:/sharedvol 
-    #     # c++ executive, pre-trained model, input/output images
+    cpp-cartoongan:
+      networks:
+        - bhs
+      image: hansen1416/bhs-cpp-cartoongan
+      ports:
+        - 4602:4602
+      # volumes:
+        # - ${CPP_STYLIZE_OPT}:/opt
+        # - ${SHARED_DATA}:/sharedvol 
+        # c++ executive, pre-trained model, input/output images
+      environment:
+        - ALI_ACCESS_ID=${ALI_ACCESS_ID}
+        - ALI_ACCESS_KEY=${ALI_ACCESS_KEY}
 
 networks:
     bhs:

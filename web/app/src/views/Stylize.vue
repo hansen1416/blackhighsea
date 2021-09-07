@@ -56,44 +56,6 @@ export default defineComponent({
     },
     created() {
         console.log("Stylize created");
-
-        // this.email = "hansen1416@163.com";
-
-        // this.ws = new WebSocket("ws://localhost:4601/ws/cartoongan");
-
-        // this.ws.onopen = () => {
-        //     console.log("ws Connected.");
-        // };
-
-        // this.ws.onmessage = (event: MessageEvent) => {
-        //     try {
-        //         const data = JSON.parse(event.data);
-
-        //         if (data.image) {
-        //             const image_name = data.image.split("/").pop();
-
-        //             this.transferedImage = "http://localhost:4602/" + image_name;
-
-        //             console.log(this.transferedImage);
-        //         } else if (data.video) {
-        //             const video_name = data.video.split("/").pop();
-
-        //             this.transferedVideo = "http://localhost:4602/" + video_name;
-
-        //             console.log(this.transferedVideo);
-        //         }
-        //     } catch (error) {
-        //         console.error(error);
-        //     }
-        // };
-
-        // this.ws.onclose = () => {
-        //     console.log("ws Connection is closed...");
-        // };
-
-        // axios.get("http://localhost:4602/health").then((response: AxiosResponse) => {
-        //     console.log(response);
-        // });
     },
     computed: {},
     methods: {
@@ -118,56 +80,20 @@ export default defineComponent({
 
             const data = new FormData();
 
-            data.append('media', this.origin_image);
+            data.append("media", this.origin_image);
 
-            if (this.mode == "video"){
-                data.append('email', this.email);
+            if (this.mode == "video") {
+                data.append("email", this.email);
             }
 
-            axios.post('http://localhost:4601/cartoongan', data)
-            .then(function (response: AxiosResponse) {
-                console.log(response);
-            })
-            .catch(function (error) {
-                console.log(error);
-            });
-
-            // if (this.mode == "image") {
-            //     this.ws.send("image");
-
-            //     this.origin_image.arrayBuffer().then((buffer: ArrayBuffer) => {
-            //         this.ws.send(buffer);
-            //     });
-            // }
-
-            // if (this.mode == "video") {
-            //     const pseudoVideo = document.createElement("video");
-
-            //     pseudoVideo.onloadeddata = () => {
-            //         if (pseudoVideo.duration >= 20) {
-            //             alert("sorry video lenght must be less than 20 seconds");
-
-            //             return;
-            //         }
-
-            //         if (!this.email) {
-            //             alert(
-            //                 "Please enter your email address to receive the transformed video"
-            //             );
-
-            //             return;
-            //         }
-
-            //         this.ws.send("video:" + this.email);
-
-            //         this.origin_image.arrayBuffer().then((buffer: ArrayBuffer) => {
-            //             this.ws.send(buffer);
-            //         });
-            //     };
-            //     // create url from blob
-            //     pseudoVideo.src = URL.createObjectURL(this.origin_image);
-            //     pseudoVideo.load();
-            // }
+            axios
+                .post("http://localhost:4601/cartoongan", data)
+                .then(function (response: AxiosResponse) {
+                    console.log(response);
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
 
             return false;
         },
@@ -237,4 +163,79 @@ section {
     text-align: right;
     padding: 10px 20px;
 }
+
+// this.email = "hansen1416@163.com";
+
+// this.ws = new WebSocket("ws://localhost:4601/ws/cartoongan");
+
+// this.ws.onopen = () => {
+//     console.log("ws Connected.");
+// };
+
+// this.ws.onmessage = (event: MessageEvent) => {
+//     try {
+//         const data = JSON.parse(event.data);
+
+//         if (data.image) {
+//             const image_name = data.image.split("/").pop();
+
+//             this.transferedImage = "http://localhost:4602/" + image_name;
+
+//             console.log(this.transferedImage);
+//         } else if (data.video) {
+//             const video_name = data.video.split("/").pop();
+
+//             this.transferedVideo = "http://localhost:4602/" + video_name;
+
+//             console.log(this.transferedVideo);
+//         }
+//     } catch (error) {
+//         console.error(error);
+//     }
+// };
+
+// this.ws.onclose = () => {
+//     console.log("ws Connection is closed...");
+// };
+
+// axios.get("http://localhost:4602/health").then((response: AxiosResponse) => {
+//     console.log(response);
+// });
+
+// if (this.mode == "image") {
+//     this.ws.send("image");
+
+//     this.origin_image.arrayBuffer().then((buffer: ArrayBuffer) => {
+//         this.ws.send(buffer);
+//     });
+// }
+
+// if (this.mode == "video") {
+//     const pseudoVideo = document.createElement("video");
+
+//     pseudoVideo.onloadeddata = () => {
+//         if (pseudoVideo.duration >= 20) {
+//             alert("sorry video lenght must be less than 20 seconds");
+
+//             return;
+//         }
+
+//         if (!this.email) {
+//             alert(
+//                 "Please enter your email address to receive the transformed video"
+//             );
+
+//             return;
+//         }
+
+//         this.ws.send("video:" + this.email);
+
+//         this.origin_image.arrayBuffer().then((buffer: ArrayBuffer) => {
+//             this.ws.send(buffer);
+//         });
+//     };
+//     // create url from blob
+//     pseudoVideo.src = URL.createObjectURL(this.origin_image);
+//     pseudoVideo.load();
+// }
 </style>

@@ -1,1 +1,1 @@
-docker run -itd --name cpp --mount type=bind,source=/home/hlz/blackhighsea/cartoongan/,target=/home hansen1416/bhs-cpp-stylize
+docker run -itd --name cpp --mount type=bind,source=/home/hlz/blackhighsea/cartoongan/,target=/home hansen1416/bhs-cpp-cartoongan
