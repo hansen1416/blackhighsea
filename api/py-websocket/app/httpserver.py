@@ -251,7 +251,7 @@ class CartoonGANHandler(BaseHandler):
                     cartoongan_image, hostname + object_name, output_object
                 )
 
-            self.write(hostname + object_name)
+            self.write('https://' + hostname + output_object)
 
         finally:
             logging.info("upload image failed")

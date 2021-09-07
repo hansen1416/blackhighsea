@@ -71,7 +71,38 @@ export default defineComponent({
             }
         },
         deleteImage() {
-            console.info("deleted");
+            (this.origin_image = (null as unknown) as Blob), console.info("deleted");
+        },
+        loadImage(url: string) {
+            let counter = 0;
+            let anim = 0;
+
+            const keeptrying = () => {
+
+                const img = new Image();
+
+                img.onload = () => {
+                    console.info("loaded");
+
+                    cancelAnimationFrame(anim);
+
+                    this.transferedImage = url;
+                };
+
+                img.onerror = () => {
+                    anim = requestAnimationFrame(keeptrying);
+                };
+
+                img.src = url;
+
+                counter += 1;
+
+                if (counter >= 100) {
+                    cancelAnimationFrame(anim);
+                }
+            };
+
+            keeptrying();
         },
         submitImage() {
             if (!this.origin_image) {
@@ -88,8 +119,10 @@ export default defineComponent({
 
             axios
                 .post("http://localhost:4601/cartoongan", data)
-                .then(function (response: AxiosResponse) {
-                    console.log(response);
+                .then((response: AxiosResponse) => {
+                    if (response.data as string) {
+                        this.loadImage(response.data);
+                    }
                 })
                 .catch(function (error) {
                     console.log(error);
