@@ -4,7 +4,6 @@ FROM ubuntu:20.04
 ENV TZ=America/New_York
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-# Add source files to docker image
 # ADD .	/home/websocket
 
 # Update and install dependencies
@@ -17,12 +16,13 @@ RUN apt-get -y update \
 # RUN pip3 install asyncio websockets setuptools
 RUN pip3 install numpy tornado opencv-python cos-python-sdk-v5
 
-RUN pip3 install oss2
+RUN pip3 install oss2 torch==1.9.0+cpu \
+    torchvision==0.10.0+cpu torchaudio==0.9.0 -f https://download.pytorch.org/whl/torch_stable.html
 
 EXPOSE 4601
 
 WORKDIR /app
-
+# Add source files to docker image
 COPY ./app/httpserver.py /app
 
 CMD ["python3", "-u", "./httpserver.py"]
