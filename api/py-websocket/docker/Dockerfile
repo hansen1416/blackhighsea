@@ -14,7 +14,8 @@ RUN apt-get -y update \
 
 # Install project requirements
 # RUN pip3 install asyncio websockets setuptools
-RUN pip3 install numpy tornado opencv-python cos-python-sdk-v5 oss2 \
+
+RUN pip3 install numpy tornado opencv-python oss2 \
     torch==1.9.0+cpu torchvision==0.10.0+cpu torchaudio==0.9.0 -f https://download.pytorch.org/whl/torch_stable.html
 
 EXPOSE 4601
