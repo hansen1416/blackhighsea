@@ -34,17 +34,7 @@ import numpy as np
 import cv2
 import tornado.web
 
-# import tornado.escape
-# import tornado.ioloop
-# import tornado.websocket
-# import tornado.locks
-# import tornado.gen
-# from tornado.options import define, options, parse_command_line
-
-# define("port", default=4601, help="run on the given port", type=int)
-# define("debug", default=True, help="run in debug mode")
-
-# lock = tornado.locks.Lock()
+import cartoongan
 
 log_format = "%(levelname)s %(asctime)s - %(message)s"
 

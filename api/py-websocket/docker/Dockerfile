@@ -22,6 +22,6 @@ EXPOSE 4601
 
 WORKDIR /app
 # Add source files to docker image
-COPY ./app/httpserver.py /app
+COPY ./app /app
 
 CMD ["python3", "-u", "./httpserver.py"]

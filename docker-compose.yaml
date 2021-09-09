@@ -82,19 +82,19 @@ services:
     #   volumes:
     #     - ${PY_SELENIUM_SOURCE}:/app
 
-    cpp-cartoongan:
-      networks:
-        - bhs
-      image: hansen1416/bhs-cpp-cartoongan
-      ports:
-        - 4602:4602
-      # volumes:
-        # - ${CPP_STYLIZE_OPT}:/opt
-        # - ${SHARED_DATA}:/sharedvol 
-        # c++ executive, pre-trained model, input/output images
-      environment:
-        - ALI_ACCESS_ID=${ALI_ACCESS_ID}
-        - ALI_ACCESS_KEY=${ALI_ACCESS_KEY}
+    # cpp-cartoongan:
+    #   networks:
+    #     - bhs
+    #   image: hansen1416/bhs-cpp-cartoongan
+    #   ports:
+    #     - 4602:4602
+    #   # volumes:
+    #     # - ${CPP_STYLIZE_OPT}:/opt
+    #     # - ${SHARED_DATA}:/sharedvol 
+    #     # c++ executive, pre-trained model, input/output images
+    #   environment:
+    #     - ALI_ACCESS_ID=${ALI_ACCESS_ID}
+    #     - ALI_ACCESS_KEY=${ALI_ACCESS_KEY}
 
 networks:
     bhs:
