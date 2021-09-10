@@ -12,6 +12,7 @@ import json
 import tempfile
 import random
 import string
+import subprocess
 
 # import glob
 import socket
@@ -34,7 +35,7 @@ import numpy as np
 import cv2
 import tornado.web
 
-import cartoongan
+# import cartoongan
 
 log_format = "%(levelname)s %(asctime)s - %(message)s"
 
@@ -83,14 +84,19 @@ def send_email_with_video(to, video_file):
     # start TLS for security
     # server.starttls()
 
-    server.connect("in-v3.mailjet.com", 587)
+    # server.connect("in-v3.mailjet.com", 587)
 
-    username = os.environ.get("SMTP_USERNAME")
+    # username = os.environ.get("SMTP_USERNAME")
+    # password = os.environ.get("SMTP_PASSWORD")
+
+    server.connect("smtp.gmail.com", 465)
+
+    username = "badapplesweetie@gmail.com"
     password = os.environ.get("SMTP_PASSWORD")
 
-    server.login(username, password)
-
     try:
+        server.login(username, password)
+
         server.sendmail("badapplesweetie@gmail.com", [to], msg.as_string())
     finally:
         server.quit()
@@ -122,57 +128,14 @@ def resize_image(img_np):
 
 def cartoongan_image(input_image, output_image):
 
-    logging.info("start cartoon gan")
-
     model_path = os.path.join("/opt", "gan-generator.pt")
-    # input_image = os.path.join('/sharedvol', 'test.jpg')
 
-    HOST, PORT = "cpp-cartoongan", 4602
+    proc = subprocess.Popen(["/app/cartoonGan", model_path, \
+        os.path.join("/tmp", input_image), os.path.join("/tmp", output_image)])
 
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+    res = proc.wait()
 
-        s.connect((HOST, PORT))
-
-        logging.info("connected to host {} port {}".format(HOST, PORT))
-
-        send_msg = model_path + " " + input_image + " " + output_image
-
-        s.send(send_msg.encode("ascii"))
-
-        logging.info("message sent through socket %s" % send_msg)
-
-        while True:
-            # timeout for transfer a image is 10 seconds
-            s.settimeout(10)
-            try:
-                recv_msg = s.recv(1024)
-            except socket.timeout:
-                logging.info("something wrong")
-                break
-
-            if type(recv_msg) == type(b""):
-
-                # logging.info('new message {}'.format(recv_msg))
-
-                recv_msg = recv_msg.decode("ascii")
-
-                if recv_msg[-4:] == ".jpg":
-
-                    logging.info("new picture {}".format(recv_msg))
-
-                    s.close()
-
-                    break
-            else:
-                break
-
-def cartoongan_video(input_video, email):
-
-    cap = cv2.VideoCapture(input_video)
-
-    fps = cap.get(cv2.CAP_PROP_FPS)
-
-    logging.info("fps %d" % fps)
+    logging.info("cartoon gan result:" + str(res))
 
     # 阿里云账号AccessKey拥有所有API的访问权限，风险很高。强烈建议您创建并使用RAM用户进行API访问或日常运维，请登录RAM控制台创建RAM用户。
     auth = oss2.Auth(
@@ -182,19 +145,39 @@ def cartoongan_video(input_video, email):
     # 填写Bucket名称。
     bucket = oss2.Bucket(auth, "oss-cn-hongkong.aliyuncs.com", "bhs-media")
 
-    hostname = "bhs-media.oss-cn-hongkong.aliyuncs.com/"
+    try:
+        # 必须以二进制的方式打开文件。
+        # 填写本地文件的完整路径。如果未指定本地路径，则默认从示例程序所属项目对应本地路径中上传文件。
+        with open(os.path.join("/tmp", output_image), 'rb') as fileobj:
+            # 填写Object完整路径。Object完整路径中不能包含Bucket名称。
+            bucket.put_object(output_image, fileobj)
+
+            logging.info("start upload " + str(type(fileobj)))
+
+        # self.write("https://" + hostname + output_object)
+    except Exception as e:  # work on python 3.x
+        logging.info("upload image failed, " + str(e))
+
+
+def cartoongan_video(input_video, email):
+
+    cap = cv2.VideoCapture(input_video)
+
+    fps = cap.get(cv2.CAP_PROP_FPS)
+
+    logging.info("fps %d" % fps)
 
     ###########
-    n = 0
-    input_images = []
-    output_objectes = []
-
     _, file_extension = os.path.splitext(input_video)
 
-    frame_filename = (
-            "".join(random.choices(string.ascii_letters + string.digits, k=8))
-            + file_extension
-        )
+    random_name = (
+        "".join(random.choices(string.ascii_letters + string.digits, k=8))
+        + file_extension
+    )
+
+    frame_images = []
+
+    n = 0
 
     while cap.isOpened():
 
@@ -204,25 +187,14 @@ def cartoongan_video(input_video, email):
         if success == True:
             # Display the resulting frame
 
+            frame_image = os.path.join('/tmp', "{}_{}.jpg".format(random_name, n))
+
             frame = resize_image(frame)
             # from ndarray back to bytes
-            bytes_tuple = cv2.imencode(".jpg", frame)
+            cv2.imwrite(frame_image, frame)
+            frame_images.append(frame_image)
 
-            input_object = "videos/{}_{}.jpg".format(frame_filename, n)
-            
-
-            try:
-                # 填写Object完整路径和Bytes内容。Object完整路径中不能包含Bucket名称。
-                bucket.put_object(input_object, bytes_tuple[1].tobytes())
-                # becareful, no https:// prefix here, in cpp we are searching for '/'
-            except Exception as e:  # work on python 3.x
-                logging.info("upload image failed, " + str(e))
-                return
-
-            input_images.append(hostname + input_object)
-            output_objectes.append("videos/cg_{}_{}.jpg".format(frame_filename, n))
-
-            logging.info("frame image saved to %s" % input_images[-1])
+            logging.info("frame image saved to %s" % frame_image)
 
             n += 1
         else:
@@ -234,54 +206,37 @@ def cartoongan_video(input_video, email):
     # Closes all the frames
     cv2.destroyAllWindows()
 
+    transferred_frames = []
     model_path = os.path.join("/opt", "gan-generator.pt")
 
-    HOST, PORT = "cpp-cartoongan", 4602
+    for n, frame_image in enumerate(frame_images):
 
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        transferred_frame = os.path.join("/tmp", "cg_{}_{}.jpg".format(random_name, n))
+        
+        proc = subprocess.Popen(["/app/cartoonGan", model_path, \
+        frame_image, transferred_frame])
 
-        s.connect((HOST, PORT))
+        res = proc.wait()
 
-        for i, frame in enumerate(input_images):
+        transferred_frames.append(transferred_frame)
 
-            send_msg = model_path + " " + frame + " " + output_objectes[i]
-
-            s.send(send_msg.encode("ascii"))
-            # we need 30 seconds, because download/upload to aliyun
-            s.settimeout(30)
-
-            try:
-                recv_msg = s.recv(1024)
-
-                logging.info("frame transferred saved to %s" % recv_msg)
-            except socket.timeout:
-                logging.info("socket timeout")
-                break
-    ###########
-
-    transferred_frame = []
-    # download from aliyun to local
-    for i, output_objecte in enumerate(output_objectes):
-        tmp_output = "/tmp/{}_{}.jpg".format(frame_filename, i)
-
-        # 下载OSS文件到本地文件。如果指定的本地文件存在会覆盖，不存在则新建。
-        #  <yourLocalFile>由本地文件路径加文件名包括后缀组成，例如/users/local/myfile.txt。
-        #  <yourObjectName>表示下载的OSS文件的完整名称，即包含文件后缀在内的完整路径，例如abc/efg/123.jpg。
-        bucket.get_object_to_file(output_objecte, tmp_output)
-
-        # if os.path.isfile(recv_msg):
-        transferred_frame.append(tmp_output)
+        if res == 0:
+            logging.info("frame image saved to %s" % transferred_frame)
+        else:
+            logging.info("transfer image failed %s" % frame_image)
 
     frame_data_array = []
 
-    for filename in transferred_frame:
-        img = cv2.imread(filename)
+    for frame_image in transferred_frames:
+        img = cv2.imread(frame_image)
         height, width, _ = img.shape
         size = (width, height)
         frame_data_array.append(img)
 
     # out_video_path = "/sharedvol/adf30332-e84c-4cb1-9571-098b53f7a40a_video_out.avi"
-    out_video_path = "/tmp/{}.avi".format("".join(random.choices(string.ascii_letters + string.digits, k=8)))
+    out_video_path = "/tmp/{}.avi".format(
+        "".join(random.choices(string.ascii_letters + string.digits, k=8))
+    )
 
     # filename, encoder, fps, framesize, [isColor]
     out_video = cv2.VideoWriter(
@@ -302,7 +257,7 @@ def cartoongan_video(input_video, email):
 
     logging.info("send out video path %s" % out_video_path)
 
-    #todo delete input_video, transferred_frame, out_video_path
+    # todo delete input_video, transferred_frame, out_video_path
 
 class BaseHandler(tornado.web.RequestHandler):
     def set_default_headers(self):
@@ -351,16 +306,21 @@ class CartoonGANHandler(BaseHandler):
 
         content_type = media["content_type"]
 
-        if content_type[0:5] == 'video':
+        if content_type[0:5] == "video":
             email = self.get_body_argument("email", default="")
 
             if not email:
                 logging.info("email is empty")
                 return
 
+            logging.info("email " + email)
+
+            # send_email_with_video(email, '/tmp/F7PduP4y.avi')
+            # return
+
             input_video = "/tmp/" + str(int(time())) + "_" + random_name
 
-            video_bytesio = BytesIO(media['body'])
+            video_bytesio = BytesIO(media["body"])
 
             with open(input_video, "wb") as outfile:
                 # Copy the BytesIO stream to the output file
@@ -372,42 +332,25 @@ class CartoonGANHandler(BaseHandler):
 
         else:
 
-            # media['body'] is ninary, ndarray is np.ndarray
-            ndarray = cv2.imdecode(np.frombuffer(media["body"], np.uint8), cv2.IMREAD_COLOR)
-            # resize if the image is too big
-            ndarray = resize_image(ndarray)
             # from ndarray back to bytes
-            bytes_tuple = cv2.imencode(".jpg", ndarray)
+            input_iamge = str(time()) + random_name
+            output_iamge = "cg_" + str(time()) + random_name
 
-            media["body"] = bytes_tuple[1].tobytes()
-
-            # 阿里云账号AccessKey拥有所有API的访问权限，风险很高。强烈建议您创建并使用RAM用户进行API访问或日常运维，请登录RAM控制台创建RAM用户。
-            auth = oss2.Auth(
-                os.environ.get("ALI_ACCESS_ID"), os.environ.get("ALI_ACCESS_KEY")
+            # media['body'] is ninary, ndarray is np.ndarray
+            ndarray = cv2.imdecode(
+                np.frombuffer(media["body"], np.uint8), cv2.IMREAD_COLOR
             )
-            # yourEndpoint填写Bucket所在地域对应的Endpoint
-            # 填写Bucket名称。
-            bucket = oss2.Bucket(auth, "oss-cn-hongkong.aliyuncs.com", "bhs-media")
+            # resize if the image is too big            
+            cv2.imwrite(os.path.join("/tmp", input_iamge), resize_image(ndarray))
 
-            object_name = "imgs/" + str(int(time())) + "_" + random_name
-            output_object = "imgs/cg_" + str(int(time())) + "_" + random_name
+            # The IOLoop will catch the exception and print a stack trace in
+            # the logs. Note that this doesn't look like a normal call, since
+            # we pass the function object to be called by the IOLoop.
+            tornado.ioloop.IOLoop.current().spawn_callback(
+                cartoongan_image, input_iamge, output_iamge
+            )
 
-            try:
-                # 填写Object完整路径和Bytes内容。Object完整路径中不能包含Bucket名称。
-                bucket.put_object(object_name, media["body"])
-                # becareful, no https:// prefix here, in cpp we are searching for '/'
-                
-
-                # The IOLoop will catch the exception and print a stack trace in
-                # the logs. Note that this doesn't look like a normal call, since
-                # we pass the function object to be called by the IOLoop.
-                tornado.ioloop.IOLoop.current().spawn_callback(
-                    cartoongan_image, hostname + object_name, output_object
-                )
-
-                self.write("https://" + hostname + output_object)
-            except Exception as e:  # work on python 3.x
-                logging.info("upload image failed, " + str(e))
+            self.write("https://" + hostname + output_iamge)
 
 if __name__ == "__main__":
 

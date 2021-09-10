@@ -1,0 +1,8 @@
+libs/
+cartoonGan
+
+docker/libtorch*
+docker/opencv
+docker/cartoonGan
+docker/cos
+docker/aliyun-oss-cpp-sdk

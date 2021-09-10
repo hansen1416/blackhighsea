@@ -15,13 +15,15 @@ RUN apt-get -y update \
 # Install project requirements
 # RUN pip3 install asyncio websockets setuptools
 
-RUN pip3 install numpy tornado opencv-python oss2 \
-    torch==1.9.0+cpu torchvision==0.10.0+cpu torchaudio==0.9.0 -f https://download.pytorch.org/whl/torch_stable.html
+RUN pip3 install numpy tornado opencv-python oss2 
 
 EXPOSE 4601
 
 WORKDIR /app
 # Add source files to docker image
-COPY ./app /app
+COPY ./libs /opt
+COPY ./cartoonGan /app/cartoonGan
+COPY ./httpserver.py /app/httpserver.py
+
 
 CMD ["python3", "-u", "./httpserver.py"]
