@@ -84,20 +84,24 @@ def send_email_with_video(to, video_file):
     # start TLS for security
     # server.starttls()
 
-    # server.connect("in-v3.mailjet.com", 587)
+    server.connect("in-v3.mailjet.com", 587)
 
-    # username = os.environ.get("SMTP_USERNAME")
-    # password = os.environ.get("SMTP_PASSWORD")
-
-    server.connect("smtp.gmail.com", 465)
-
-    username = "badapplesweetie@gmail.com"
+    username = os.environ.get("SMTP_USERNAME")
     password = os.environ.get("SMTP_PASSWORD")
+
+    # server.connect("smtp.gmail.com", 465)
+
+    # username = "badapplesweetie@gmail.com"
+    # password = os.environ.get("SMTP_PASSWORD")
 
     try:
         server.login(username, password)
 
         server.sendmail("badapplesweetie@gmail.com", [to], msg.as_string())
+
+        logging.info('email sent to {}'.format(to))
+    except Exception as e:
+        logging.info('Exception {}'.format(str(e)))
     finally:
         server.quit()
 
@@ -315,8 +319,8 @@ class CartoonGANHandler(BaseHandler):
 
             logging.info("email " + email)
 
-            # send_email_with_video(email, '/tmp/F7PduP4y.avi')
-            # return
+            send_email_with_video(email, '/tmp/F7PduP4y.avi')
+            return
 
             input_video = "/tmp/" + str(int(time())) + "_" + random_name
 
