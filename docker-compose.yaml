@@ -48,11 +48,11 @@ services:
     py-websocket:
       networks:
         - bhs
-      image: hansen1416/bhs-py-websocket
+      image: hansen1416/bhs-py-tornado
       ports:
         - 4601:4601
       volumes:
-        - ${PY_WEBSOCKET_SOURCE}:/app
+        - ${PY_TORNADO_SOURCE}:/app
       environment:
         - ALI_ACCESS_ID=${ALI_ACCESS_ID}
         - ALI_ACCESS_KEY=${ALI_ACCESS_KEY}

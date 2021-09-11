@@ -1,31 +1,36 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: websocket-server
+  name: tornado-cartoongan
 spec:
   type: LoadBalancer
   ports:
     - port: 4601
-      nodePort: 30000
+      nodePort: 30001
   selector:
-    app: bhs-websocket-server
+    app: bhs-tornado-cartoongan
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: websocket-server
+  name: tornado-cartoongan
 spec:
   selector:
     matchLabels:
-      app: bhs-websocket-server
+      app: bhs-tornado-cartoongan
   template:
     metadata:
       labels:
-        app: bhs-websocket-server
+        app: bhs-tornado-cartoongan
     spec:
       containers:
-      - name: websocket-server
-        image: hansen1416/bhs-py-websocket
+      - name: tornado-cartoongan
+        image: hansen1416/bhs-py-tornado
+        env:
+        - name: ALI_ACCESS_ID
+          value: "LTAI5tLwV38wLDsnsxKEdX3f"
+        - name: ALI_ACCESS_KEY
+          value: "vC8Uv3jophlVnRSkNBWkqTkp9fL9F7"
         livenessProbe:
           httpGet:
             path: /health
@@ -38,8 +43,8 @@ spec:
         #   name: pvc
         resources:
           limits:
-            memory: 0.5Gi
-            cpu: "0.25"
+            memory: 1Gi
+            cpu: "0.5"
       # volumes:
       # - name: pvc
       #   persistentVolumeClaim:

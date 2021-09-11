@@ -25,5 +25,4 @@ COPY ./libs /opt
 COPY ./cartoonGan /app/cartoonGan
 COPY ./httpserver.py /app/httpserver.py
 
-
 CMD ["python3", "-u", "./httpserver.py"]
