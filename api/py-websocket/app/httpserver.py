@@ -42,70 +42,6 @@ log_format = "%(levelname)s %(asctime)s - %(message)s"
 logging.basicConfig(stream=sys.stdout, format=log_format, level=logging.INFO)
 logger = logging.getLogger()
 
-
-def send_email_with_video(to, video_file):
-
-    # Create the message
-    msg = MIMEMultipart()
-
-    msg["To"] = email.utils.formataddr(("Recipient", to))
-    msg["From"] = email.utils.formataddr(("BlackHighSea", "badapplesweetie@gmail.com"))
-    msg["Subject"] = "Your video is transformed"
-
-    # string to store the body of the mail
-    body = "Hi,\n\nTanks for using my service, here is your video."
-
-    # attach the body with the msg instance
-    msg.attach(MIMEText(body, "plain"))
-
-    # open the file to be sent
-    attachment = open(video_file, "rb")
-
-    # instance of MIMEBase and named as p
-    p = MIMEBase("application", "octet-stream")
-
-    # To change the payload into encoded form
-    p.set_payload((attachment).read())
-
-    # encode into base64
-    encoders.encode_base64(p)
-
-    filename = video_file.split("/").pop()
-
-    p.add_header("Content-Disposition", "attachment; filename= %s" % filename)
-
-    # attach the instance 'p' to instance 'msg'
-    msg.attach(p)
-
-    server = smtplib.SMTP()
-
-    server.set_debuglevel(True)  # show communication with the server
-
-    # start TLS for security
-    # server.starttls()
-
-    server.connect("in-v3.mailjet.com", 587)
-
-    username = os.environ.get("SMTP_USERNAME")
-    password = os.environ.get("SMTP_PASSWORD")
-
-    # server.connect("smtp.gmail.com", 465)
-
-    # username = "badapplesweetie@gmail.com"
-    # password = os.environ.get("SMTP_PASSWORD")
-
-    try:
-        server.login(username, password)
-
-        server.sendmail("badapplesweetie@gmail.com", [to], msg.as_string())
-
-        logging.info('email sent to {}'.format(to))
-    except Exception as e:
-        logging.info('Exception {}'.format(str(e)))
-    finally:
-        server.quit()
-
-
 def resize_image(img_np):
     # resize image if either weight or height is more than 600
     # if the size is too big, it will crush the pytorch model
@@ -163,7 +99,7 @@ def cartoongan_image(input_image, output_image):
         logging.info("upload image failed, " + str(e))
 
 
-def cartoongan_video(input_video, email):
+def cartoongan_video(input_video, output_name):
 
     cap = cv2.VideoCapture(input_video)
 
@@ -238,9 +174,7 @@ def cartoongan_video(input_video, email):
         frame_data_array.append(img)
 
     # out_video_path = "/sharedvol/adf30332-e84c-4cb1-9571-098b53f7a40a_video_out.avi"
-    out_video_path = "/tmp/{}.avi".format(
-        "".join(random.choices(string.ascii_letters + string.digits, k=8))
-    )
+    out_video_path = "/tmp/{}.avi".format(output_name)
 
     # filename, encoder, fps, framesize, [isColor]
     out_video = cv2.VideoWriter(
@@ -257,11 +191,30 @@ def cartoongan_video(input_video, email):
     cv2.destroyAllWindows()
     out_video.release()
 
-    send_email_with_video(email, out_video_path)
+    # send_email_with_video(email, out_video_path)
 
     logging.info("send out video path %s" % out_video_path)
 
-    # todo delete input_video, transferred_frame, out_video_path
+    # 阿里云账号AccessKey拥有所有API的访问权限，风险很高。强烈建议您创建并使用RAM用户进行API访问或日常运维，请登录RAM控制台创建RAM用户。
+    auth = oss2.Auth(
+        os.environ.get("ALI_ACCESS_ID"), os.environ.get("ALI_ACCESS_KEY")
+    )
+    # yourEndpoint填写Bucket所在地域对应的Endpoint
+    # 填写Bucket名称。
+    bucket = oss2.Bucket(auth, "oss-cn-hongkong.aliyuncs.com", "bhs-media")
+
+    try:
+        # 必须以二进制的方式打开文件。
+        # 填写本地文件的完整路径。如果未指定本地路径，则默认从示例程序所属项目对应本地路径中上传文件。
+        with open(out_video_path, 'rb') as fileobj:
+            # 填写Object完整路径。Object完整路径中不能包含Bucket名称。
+            bucket.put_object(output_name, fileobj)
+
+            logging.info("start upload " + str(type(fileobj)))
+
+        # self.write("https://" + hostname + output_object)
+    except Exception as e:  # work on python 3.x
+        logging.info("upload video failed, " + str(e))
 
 class BaseHandler(tornado.web.RequestHandler):
     def set_default_headers(self):
@@ -311,18 +264,9 @@ class CartoonGANHandler(BaseHandler):
         content_type = media["content_type"]
 
         if content_type[0:5] == "video":
-            email = self.get_body_argument("email", default="")
-
-            if not email:
-                logging.info("email is empty")
-                return
-
-            logging.info("email " + email)
-
-            send_email_with_video(email, '/tmp/F7PduP4y.avi')
-            return
 
             input_video = "/tmp/" + str(int(time())) + "_" + random_name
+            output_name = "".join(random.choices(string.ascii_letters + string.digits, k=16))
 
             video_bytesio = BytesIO(media["body"])
 
@@ -331,8 +275,10 @@ class CartoonGANHandler(BaseHandler):
                 outfile.write(video_bytesio.getbuffer())
 
             tornado.ioloop.IOLoop.current().spawn_callback(
-                cartoongan_video, input_video, email
+                cartoongan_video, input_video, output_name
             )
+
+            self.write("https://" + hostname + output_name + '.avi')
 
         else:
 
